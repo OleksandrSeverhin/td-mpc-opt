@@ -48,6 +48,11 @@ class TDMPC2:
 		frac = episode_length/self.cfg.discount_denom
 		return min(max((frac-1)/(frac), self.cfg.discount_min), self.cfg.discount_max)
 
+	def distill(self, obs, action, task=None):
+		z = self.world_model.encode(obs, task)
+		z_next, r = self.world_model.step(z, action, task)
+		return z_next, r
+
 	def save(self, fp):
 		"""
 		Save state dict of the agent to filepath.
@@ -215,7 +220,7 @@ class TDMPC2:
 		discount = self.discount[task].unsqueeze(-1) if self.cfg.multitask else self.discount
 		return reward + discount * self.model.Q(next_z, pi, task, return_type='min', target=True)
 
-	def update(self, buffer):
+	def update(self, obs, action, reward, task): # replace `buffer` with 4-tuple batch
 		"""
 		Main update function. Corresponds to one iteration of model learning.
 		
@@ -225,7 +230,7 @@ class TDMPC2:
 		Returns:
 			dict: Dictionary of training statistics.
 		"""
-		obs, action, reward, task = buffer.sample()
+		# obs, action, reward, task = batch # buffer.sample()
 	
 		# Compute targets
 		with torch.no_grad():
@@ -269,7 +274,7 @@ class TDMPC2:
 		# Update model
 		total_loss.backward()
 		grad_norm = torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.cfg.grad_clip_norm)
-		self.optim.step()
+		# self.optim.step()
 
 		# Update policy
 		pi_loss = self.update_pi(zs.detach(), task)

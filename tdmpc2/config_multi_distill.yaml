@@ -8,11 +8,11 @@ obs: state
 # evaluation
 checkpoint: ???
 eval_episodes: 10
-eval_freq: 50000
+eval_freq: 1_000_000
 
 # training
-steps: 10_000_000
-batch_size: 256
+steps: 5_000_000 # 290_000 # 30M
+batch_size: 1024
 reward_coef: 0.1
 value_coef: 0.1
 consistency_coef: 20
@@ -24,9 +24,9 @@ tau: 0.01
 discount_denom: 5
 discount_min: 0.95
 discount_max: 0.995
-buffer_size: 1_000_000
-exp_name: multi_distill
-data_dir: /home/dmytrok/Desktop/tdmpc2/tdmpc2/data/mt30 # ???
+buffer_size: 5_000_000 # 290_000 # TBD 1_000_000
+exp_name: multi_distill_mt30_BS1024_5Msteps
+data_dir: /home/dmytrok/Desktop/tdmpc2/tdmpc2/data/mt30
 
 # planning
 mpc: true
@@ -49,19 +49,22 @@ num_bins: 101
 vmin: -10
 vmax: +10
 
+# distillation
+distillation_temperature: 2.0
+distillation_weight: 0.5 # [0.1..1]
+
 # architecture
 model_size: ???
 num_enc_layers: 2
 enc_dim: 256
 num_channels: 32
-mlp_dim: 384 # 512 384 
-latent_dim: 128 # 512 128
+mlp_dim: 512 # 512 384 
+latent_dim: 512 # 512 128
 task_dim: 96
-num_q: 2 # 5 2
+num_q: 5 # 5 2
 dropout: 0.01
 simnorm_dim: 8
 
-# 815e64c5d81b4d168e36a8f3c4780872fbd642da
 # logging
 wandb_project: worldmodels
 wandb_entity: dmytrokuzmenko
@@ -87,7 +90,3 @@ action_dims: ???
 episode_lengths: ???
 seed_steps: ???
 bin_size: ???
-
-# distillation
-distillation_temperature: 2.0
-distillation_weight: 0.5 # [0.1..1]

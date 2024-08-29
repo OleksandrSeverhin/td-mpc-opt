@@ -1,3 +1,53 @@
+# Experiments
+1. Evals MT30 5>1M, 42%
+- 100k
+- 200k
+- 290k -- 5.82
+- 300k
+- 400k --
+- ...
+- 900k -- 7.78
+
+python evaluate.py task=mt30 model_size=5 checkpoint=/home/dmytrok/Desktop/tdmpc2/tdmpc2/logs/mt30/1/multi_distill_mlp256_400k/models/final.pt
+
+python train.py task=mt30 model_size=5 checkpoint=/home/dmytrok/Desktop/tdmpc2/tdmpc2/models/mt30-5M.pt
+
+##
+47.01 GB / 345,690,000 samples ≈ 0.136 MB per sample
+
+----------------------------------------------------------------------------------
+# Train
+
+## Single
+python train.py task=reacher-three-hard checkpoint=/home/dmytrok/Desktop/tdmpc2/tdmpc2/models/reacher-three-hard-1.pt
+
+## Multi Distill
+
+python train.py task=mt30 model_size=5 checkpoint=/home/dmytrok/Desktop/tdmpc2/tdmpc2/models/mt30-5M.pt
+----------------------------------------------------------------------------------
+
+# Eval
+## baseline
+python evaluate.py task=mt30 model_size=5 checkpoint=/home/dmytrok/Desktop/tdmpc2/tdmpc2/models/mt30-5M.pt
+
+## MT30
+python evaluate.py task=mt30 model_size=5 checkpoint=/home/dmytrok/Desktop/tdmpc2/tdmpc2/logs/mt30/1/multi_distill_900k_70_perecent_data/models/900000.pt
+
+
+python evaluate.py task=reacher-three-hard checkpoint=/home/dmytrok/Desktop/tdmpc2/tdmpc2/models/reacher-three-hard-1.pt
+python evaluate.py task=reacher-three-hard checkpoint=/home/dmytrok/Desktop/tdmpc2/tdmpc2/logs/reacher-three-hard/1/distill-reacher-hard/models/distill-reacher-three-hard-150k.pt
+
+python evaluate.py task=reacher-three-hard checkpoint=/home/dmytrok/Desktop/tdmpc2/tdmpc2/logs/reacher-three-hard/1/distill-reacher-hard/models/final.pt
+
+## exps
+python evaluate.py task=mt30 model_size=5 checkpoint=/home/dmytrok/Desktop/tdmpc2/tdmpc2/models/mt30_5M_fp16.pt
+python evaluate.py task=mt30 model_size=19 checkpoint=/home/dmytrok/Desktop/tdmpc2/tdmpc2/models/mt30_19M_fp16.pt
+
+### pruning
+python evaluate.py task=mt30 model_size=5 checkpoint=/home/dmytrok/Desktop/tdmpc2/tdmpc2/models/mt30_5M_pruned.pt
+----------------------------------------------------------------------------------
+
+
 <h1>TD-MPC2</span></h1>
 
 Official implementation of

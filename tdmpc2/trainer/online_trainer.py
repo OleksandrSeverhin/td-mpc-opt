@@ -2,6 +2,8 @@ from time import time
 
 import numpy as np
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
 from tensordict.tensordict import TensorDict
 
 from trainer.base import Trainer
@@ -109,9 +111,73 @@ class OnlineTrainer(Trainer):
 				else:
 					num_updates = 1
 				for _ in range(num_updates):
-					_train_metrics = self.agent.update(self.buffer)
+					# _train_metrics = self.agent.update(self.buffer)
+					_train_metrics = self.update_agent()
 				train_metrics.update(_train_metrics)
 
 			self._step += 1
 	
 		self.logger.finish(self.agent)
+
+def distillation_loss(student_outputs, teacher_outputs, temperature=2.0):
+	"""
+	Compute the knowledge distillation loss.
+	"""
+	return F.kl_div(
+		F.log_softmax(student_outputs / temperature, dim=1),
+		F.softmax(teacher_outputs / temperature, dim=1),
+		reduction='batchmean'
+	) * (temperature ** 2)
+
+
+class DistillationOnlineTrainer(OnlineTrainer):
+	def __init__(self, cfg, env, agent, buffer, logger, teacher_model):
+		super().__init__(cfg, env, agent, buffer, logger)
+		self.teacher_model = teacher_model
+		self.distillation_weight = cfg.distillation_weight
+		self.distillation_temperature = cfg.distillation_temperature
+		
+		self.device = next(self.agent.model.parameters()).device
+		self.teacher_projection = nn.Linear(512, 128).to(self.device)  # 5M > 1M latent space, 512 > 128
+
+	def update_agent(self):
+		batch = self.buffer.sample()
+		obs, action, reward, task = batch 
+
+		# Get teacher outputs
+		with torch.no_grad():
+			teacher_z = self.teacher_model.model.encode(obs[0].to(self.device), task)
+			teacher_next_z = self.teacher_model.model.next(teacher_z, action[0].to(self.device), task)
+			teacher_next_z_projected = self.teacher_projection(teacher_next_z.to(self.device))
+			teacher_reward = self.teacher_model.model.reward(teacher_z, action[0].to(self.device), task)
+
+		# Get student outputs
+		student_z = self.agent.model.encode(obs[0].to(self.device), task)
+		student_next_z = self.agent.model.next(student_z, action[0].to(self.device), task)
+		student_reward = self.agent.model.reward(student_z, action[0].to(self.device), task)
+
+		# Compute distillation loss
+		dist_loss = distillation_loss(student_next_z / self.distillation_temperature, 
+										teacher_next_z_projected / self.distillation_temperature) + \
+					distillation_loss(student_reward / self.distillation_temperature, 
+										teacher_reward / self.distillation_temperature)
+
+		# backward for distillation loss
+		self.agent.optim.zero_grad()
+		(self.distillation_weight * dist_loss).backward(retain_graph=True)
+
+		# Compute original TD-MPC2 loss
+		original_loss_dict = self.agent.update(obs, action, reward, task)
+		
+		# Optimize after both backward passes
+		# grad_norm = torch.nn.utils.clip_grad_norm_(self.agent.model.parameters(), self.agent.cfg.grad_clip_norm)
+		self.agent.optim.step()
+
+		# Combine losses
+		total_loss = original_loss_dict['total_loss'] + self.distillation_weight * dist_loss.item() # 0.5 weight
+		original_loss_dict['total_loss'] = total_loss
+
+		# self.logger.log('train/distillation_loss', dist_loss.item())
+		# self.logger.log('train/total_loss', total_loss)
+
+		return original_loss_dict

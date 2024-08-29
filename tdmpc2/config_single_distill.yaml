@@ -2,16 +2,16 @@ defaults:
     - override hydra/launcher: submitit_local
 
 # environment
-task: dog-run
+task: reacher-three-hard
 obs: state
 
 # evaluation
-checkpoint: ???
+checkpoint: /home/dmytrok/Desktop/tdmpc2/tdmpc2/models/reacher-three-hard-1.pt # ???
 eval_episodes: 10
-eval_freq: 50000
+eval_freq: 5000 # adjusted
 
 # training
-steps: 10_000_000
+steps: 150000 # 10_000_000
 batch_size: 256
 reward_coef: 0.1
 value_coef: 0.1
@@ -25,8 +25,8 @@ discount_denom: 5
 discount_min: 0.95
 discount_max: 0.995
 buffer_size: 1_000_000
-exp_name: multi_distill
-data_dir: /home/dmytrok/Desktop/tdmpc2/tdmpc2/data/mt30 # ???
+exp_name: distill-reacher-hard
+data_dir: ??? # /home/dmytrok/Desktop/tdmpc2/tdmpc2/data/mt30/ # ???
 
 # planning
 mpc: true
@@ -50,14 +50,15 @@ vmin: -10
 vmax: +10
 
 # architecture
+# TODO tweak
 model_size: ???
 num_enc_layers: 2
 enc_dim: 256
 num_channels: 32
-mlp_dim: 384 # 512 384 
-latent_dim: 128 # 512 128
+mlp_dim: 512 # 512 384 
+latent_dim: 512 # 512 128
 task_dim: 96
-num_q: 2 # 5 2
+num_q: 5 # 5 2
 dropout: 0.01
 simnorm_dim: 8
 
