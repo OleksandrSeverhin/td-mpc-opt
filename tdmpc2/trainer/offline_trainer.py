@@ -10,6 +10,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from tqdm import tqdm
 
+import wandb
 from common.buffer import Buffer
 from trainer.base import Trainer
 
@@ -57,19 +58,24 @@ class OfflineTrainer(Trainer):
 		# Create buffer for sampling
 		_cfg = deepcopy(self.cfg)
 		_cfg.episode_length = 101 if self.cfg.task == 'mt80' else 501
-		## Changed
-		_cfg.buffer_size = min(30_000_000, 345_690_000)  # Use the smaller of the two values
+		_cfg.buffer_size = 60_000_000  # 60M steps
 		_cfg.steps = _cfg.buffer_size  # Match the buffer size for full GPU utilization
 		self.buffer = Buffer(_cfg)
+
+		# Calculate the number of episodes to sample from each file
+		total_episodes = sum(torch.load(fp).shape[0] for fp in fps)
+		episodes_per_file = {fp: torch.load(fp).shape[0] for fp in fps}
+		sample_ratio = _cfg.buffer_size / (total_episodes * _cfg.episode_length)
+
+		# Sample episodes uniformly from each file
 		for fp in tqdm(fps, desc='Loading data'):
 			td = torch.load(fp)
-			assert td.shape[1] == _cfg.episode_length, \
-				f'Expected episode length {td.shape[1]} to match config episode length {_cfg.episode_length}, ' \
-				f'please double-check your config.'
-			for i in range(len(td)):
+			num_episodes_to_sample = int(episodes_per_file[fp] * sample_ratio)
+			sampled_indices = np.random.choice(td.shape[0], num_episodes_to_sample, replace=False)
+			for idx in sampled_indices:
 				if self.buffer.num_eps >= self.buffer.capacity:
 					break
-				self.buffer.add(td[i])
+				self.buffer.add(td[idx])
 			if self.buffer.num_eps >= self.buffer.capacity:
 				break
 		
@@ -81,7 +87,7 @@ class OfflineTrainer(Trainer):
 			# Update agent using distillation
 			train_metrics = self.update_agent()
 			
-			if i != 0 and i % 100000 == 0:
+			if i != 0 and i % 10000 == 0:
 				self.logger.save_agent(self.agent, identifier=f'{i}')
 		self.logger.finish(self.agent)
 			# Update agent
@@ -123,7 +129,7 @@ class DistillationOfflineTrainer(OfflineTrainer):
         self.distillation_temperature = cfg.distillation_temperature
         
         self.device = next(self.agent.model.parameters()).device
-        self.teacher_projection = nn.Linear(512, 128).to(self.device)  # 5M > 1M latent space, 512 > 128
+        self.teacher_projection = nn.Linear(1376, 128).to(self.device)  # XM > 1M latent space, 1376 > 128
         
         # Initialize the projection layer
         nn.init.xavier_uniform_(self.teacher_projection.weight)
@@ -169,5 +175,11 @@ class DistillationOfflineTrainer(OfflineTrainer):
         # Update the original loss dictionary with the distillation loss
         original_loss_dict['distillation_loss'] = dist_loss.item()
         original_loss_dict['total_loss'] = total_loss.item()
+
+        # Log the losses to wandb
+        wandb.log({
+            'distillation_loss': dist_loss.item(),
+            'total_loss': total_loss.item()
+        })
 
         return original_loss_dict

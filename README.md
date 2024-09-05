@@ -1,16 +1,21 @@
 # Experiments
-1. Evals MT30 5>1M, 42%
-- 100k
-- 200k
-- 290k -- 5.82
-- 300k
-- 400k --
-- ...
-- 900k -- 7.78
 
-python evaluate.py task=mt30 model_size=5 checkpoint=/home/dmytrok/Desktop/tdmpc2/tdmpc2/logs/mt30/1/multi_distill_mlp256_400k/models/final.pt
+python evaluate.py task=mt30 model_size=5 checkpoint=/home/dmytrok/Desktop/tdmpc2/tdmpc2/logs/mt30/1/multi_distill_mt30_BS1024_300K_steps/models/final.pt
 
 python train.py task=mt30 model_size=5 checkpoint=/home/dmytrok/Desktop/tdmpc2/tdmpc2/models/mt30-5M.pt
+
+# encoder dim == MLP dim == 1792, latent state dim 768, 4 enc layers, 5 q-funcs
+python train.py task=mt30 model_size=48 checkpoint=/home/dmytrok/Desktop/tdmpc2/tdmpc2/models/mt30-48M.pt
+
+num_enc_layers: 5
+enc_dim: 4096
+num_channels: 32
+mlp_dim: 4096  
+latent_dim: 1376 
+task_dim: 96
+num_q: 8
+python train.py task=mt30 model_size=317 checkpoint=/home/dmytrok/Desktop/tdmpc2/tdmpc2/models/mt30-317M.pt
+python evaluate.py task=mt30 model_size=317 checkpoint=/home/dmytrok/Desktop/tdmpc2/tdmpc2/logs/mt30/1/multi_distill_mt30_317to1M/models/30000.pt
 
 ##
 47.01 GB / 345,690,000 samples ≈ 0.136 MB per sample

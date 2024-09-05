@@ -51,15 +51,19 @@ def train(cfg: dict):
 	buffer = Buffer(cfg)
 
 	teacher_model = TDMPC2(cfg) # to change
-	teacher_model.load(cfg.checkpoint) # 5M pretrained reacher-three-hard
+	teacher_model.load(cfg.checkpoint) # 317M pretrained reacher-three-hard
 
 	cfg.model_size = 1 # only for multi
+	cfg.num_enc_layers = 2
+	cfg.enc_dim = 256
 	cfg.mlp_dim = 384 # 384 # 512 
 	cfg.latent_dim = 128 # 128 # 512
 	cfg.num_q = 2 # 2 # 5
 	# distillation
 	cfg.distillation_temperature = 2.0
 	cfg.distillation_weight = 0.5
+
+
 
 	student_model = TDMPC2(cfg) # 1M non-trained
 
@@ -70,7 +74,7 @@ def train(cfg: dict):
         agent=student_model, # 1M or something, new smaller arch
         buffer=buffer,
         logger=Logger(cfg),
-        teacher_model=teacher_model # 5M pretrain
+        teacher_model=teacher_model # 317M pretrain
     )
 
 	# trainer_cls = OfflineTrainer if cfg.multitask else OnlineTrainer
