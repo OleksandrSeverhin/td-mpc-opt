@@ -46,6 +46,9 @@ class Buffer():
 			prefetch=1,
 			batch_size=self._batch_size,
 		)
+  
+	def is_empty(self):
+		return self._buffer is None or len(self._buffer) == 0
 
 	def _init(self, tds):
 		"""Initialize the replay buffer. Use the first episode to estimate storage requirements."""

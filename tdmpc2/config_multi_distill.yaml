@@ -2,17 +2,17 @@ defaults:
     - override hydra/launcher: submitit_local
 
 # environment
-task: dog-run
+task: mt30
 obs: state
 
 # evaluation
-checkpoint: ???
+checkpoint: /home/dmytrok/rl_exp/tdmpc2-opt/tdmpc2/models/mt30-317M.pt
 eval_episodes: 10
-eval_freq: 1_000_000
+eval_freq: 10000
 
 # training
-steps: 300000 # 290_000 # 30M
-batch_size: 256 # 1024
+steps: 200000
+batch_size: 256
 reward_coef: 0.1
 value_coef: 0.1
 consistency_coef: 20
@@ -24,9 +24,9 @@ tau: 0.01
 discount_denom: 5
 discount_min: 0.95
 discount_max: 0.995
-buffer_size: 30000 # 10-20% of steps
-exp_name: multi_distill_mt30_317to1M
-data_dir: /home/dmytrok/Desktop/tdmpc2/tdmpc2/data/mt30
+buffer_size: 20000
+exp_name: multi_distill_mt30_317to1M_200k
+data_dir: /home/dmytrok/rl_exp/tdmpc2-opt/tdmpc2/data/mt30
 
 # planning
 mpc: true
@@ -51,26 +51,17 @@ vmax: +10
 
 # distillation
 distillation_temperature: 2.0
-distillation_weight: 0.5 # [0.1..1]
+distillation_weight: 0.5
 
 # architecture
-model_size: ???
-### 317M
+model_size: 317
 num_enc_layers: 5
 enc_dim: 4096
 num_channels: 32
-mlp_dim: 4096  
-latent_dim: 1376 
+mlp_dim: 4096
+latent_dim: 1376
 task_dim: 96
 num_q: 8
-### 48M
-# num_enc_layers: 4
-# enc_dim: 1792
-# num_channels: 32
-# mlp_dim: 1792 # 512 384 
-# latent_dim: 768 # 512 128
-# task_dim: 96
-# num_q: 5 # 5 2
 dropout: 0.01
 simnorm_dim: 8
 
@@ -78,11 +69,11 @@ simnorm_dim: 8
 wandb_project: worldmodels
 wandb_entity: dmytrokuzmenko
 wandb_silent: false
-disable_wandb: false # true
+disable_wandb: false
 save_csv: true
 
 # misc
-save_video: false # true
+save_video: false
 save_agent: true
 seed: 1
 

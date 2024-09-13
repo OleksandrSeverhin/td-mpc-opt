@@ -11,7 +11,7 @@ eval_episodes: 10
 eval_freq: 50000
 
 # training
-steps: 10_000_000
+steps: 200_000
 batch_size: 256
 reward_coef: 0.1
 value_coef: 0.1
@@ -24,9 +24,9 @@ tau: 0.01
 discount_denom: 5
 discount_min: 0.95
 discount_max: 0.995
-buffer_size: 1_000_000
-exp_name: multi_distill
-data_dir: /home/dmytrok/Desktop/tdmpc2/tdmpc2/data/mt30 # ???
+buffer_size: 20_000
+exp_name: mt30_1M_from_scratch_200k_fulldata
+data_dir: /home/dmytrok/rl_exp/tdmpc2-opt/tdmpc2/data/mt30 # 
 
 # planning
 mpc: true

@@ -22,6 +22,7 @@ class WorldModel(nn.Module):
 			for i in range(len(cfg.tasks)):
 				self._action_masks[i, :cfg.action_dims[i]] = 1.
 		self._encoder = layers.enc(cfg)
+		# self._decoder = self._make_decoder(cfg)
 		self._dynamics = layers.mlp(cfg.latent_dim + cfg.action_dim + cfg.task_dim, 2*[cfg.mlp_dim], cfg.latent_dim, act=layers.SimNorm(cfg))
 		self._reward = layers.mlp(cfg.latent_dim + cfg.action_dim + cfg.task_dim, 2*[cfg.mlp_dim], max(cfg.num_bins, 1))
 		self._pi = layers.mlp(cfg.latent_dim + cfg.task_dim, 2*[cfg.mlp_dim], 2*cfg.action_dim)
@@ -46,6 +47,19 @@ class WorldModel(nn.Module):
 		self.log_std_min = self.log_std_min.to(*args, **kwargs)
 		self.log_std_dif = self.log_std_dif.to(*args, **kwargs)
 		return self
+
+	# def _make_decoder(self, cfg):
+	# 	# Mirror the encoder structure
+	# 	layers = []
+	# 	for i in range(cfg.num_enc_layers - 1, -1, -1):
+	# 		layers.append(nn.Linear(cfg.mlp_dim if i == cfg.num_enc_layers - 1 else cfg.enc_dim,
+	# 								cfg.enc_dim if i > 0 else cfg.obs_shape))
+	# 		if i > 0:
+	# 			layers.append(nn.ReLU())
+	# 	return nn.Sequential(*layers)
+
+	# def decode(self, z):
+	# 	return self._decoder(z)
 	
 	def train(self, mode=True):
 		"""

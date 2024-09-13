@@ -25,7 +25,7 @@ def format_time(seconds):
     return str(timedelta(seconds=int(seconds)))
 
 # config, config_multi_distill
-@hydra.main(config_name='config_multi_distill', config_path='.')
+@hydra.main(config_name='config', config_path='.')
 def evaluate(cfg: dict):
 	"""
 	Script for evaluating a single-task / multi-task TD-MPC2 checkpoint.
@@ -67,26 +67,26 @@ def evaluate(cfg: dict):
 		print(colored('To evaluate a multi-task model, use task=mt80 or task=mt30.', 'red', attrs=['bold']))
 
 
-	cfg.model_size = 1 # only for multi
-	cfg.mlp_dim = 384 # 512 
-	cfg.latent_dim = 128 # 512
-	cfg.num_q = 2 # 5
-	# distillation
-	cfg.distillation_temperature = 2.0
-	cfg.distillation_weight = 0.5
+	# cfg.model_size = 1 # only for multi
+	# cfg.mlp_dim = 384 # 512 
+	# cfg.latent_dim = 128 # 512
+	# cfg.num_q = 2 # 5
+	# # distillation
+	# cfg.distillation_temperature = 2.0
+	# cfg.distillation_weight = 0.5
 
 	# Make environment
 	env = make_env(cfg)
 
-	cfg.model_size = 1 # only for multi
-	cfg.num_enc_layers = 2
-	cfg.enc_dim = 256
-	cfg.mlp_dim = 384 # 384 # 512 
-	cfg.latent_dim = 128 # 128 # 512
-	cfg.num_q = 2 # 2 # 5
+	# cfg.model_size = 1 # only for multi
+	# cfg.num_enc_layers = 2
+	# cfg.enc_dim = 256
+	# cfg.mlp_dim = 384 # 384 # 512 
+	# cfg.latent_dim = 128 # 128 # 512
+	# cfg.num_q = 2 # 2 # 5
 	# distillation
-	cfg.distillation_temperature = 2.0
-	cfg.distillation_weight = 0.5
+	# cfg.distillation_temperature = 2.0
+	# cfg.distillation_weight = 0.5
 
 	# Load agent
 	agent = TDMPC2(cfg)
