@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import wandb
 import torch.nn.functional as F
 
 from common import math
@@ -14,10 +15,11 @@ class TDMPC2:
 	and supports both state and pixel observations.
 	"""
 
-	def __init__(self, cfg):
+	def __init__(self, cfg, teacher_model=None):
 		self.cfg = cfg
 		self.device = torch.device('cuda')
 		self.model = WorldModel(cfg).to(self.device)
+		self.teacher_model = teacher_model
 		self.optim = torch.optim.Adam([
 			{'params': self.model._encoder.parameters(), 'lr': self.cfg.lr*self.cfg.enc_lr_scale},
 			{'params': self.model._dynamics.parameters()},
@@ -202,7 +204,7 @@ class TDMPC2:
 		self.model.track_q_grad(True)
 
 		return pi_loss.item()
-
+ 
 	@torch.no_grad()
 	def _td_target(self, next_z, reward, task):
 		"""
@@ -220,7 +222,7 @@ class TDMPC2:
 		discount = self.discount[task].unsqueeze(-1) if self.cfg.multitask else self.discount
 		return reward + discount * self.model.Q(next_z, pi, task, return_type='min', target=True)
 
-	def update(self, obs, action, reward, task): # replace `buffer` with 4-tuple batch
+	def update(self, buffer): # buffer): # replace `buffer` with 4-tuple batch
 		"""
 		Main update function. Corresponds to one iteration of model learning.
 		
@@ -230,13 +232,13 @@ class TDMPC2:
 		Returns:
 			dict: Dictionary of training statistics.
 		"""
-		# obs, action, reward, task = batch # buffer.sample()
+		obs, action, reward, task = buffer.sample()
 	
 		# Compute targets
 		with torch.no_grad():
 			next_z = self.model.encode(obs[1:], task)
 			td_targets = self._td_target(next_z, reward, task)
-
+   
 		# Prepare for update
 		self.optim.zero_grad(set_to_none=True)
 		self.model.train()
@@ -262,29 +264,57 @@ class TDMPC2:
 			reward_loss += math.soft_ce(reward_preds[t], reward[t], self.cfg).mean() * self.cfg.rho**t
 			for q in range(self.cfg.num_q):
 				value_loss += math.soft_ce(qs[q][t], td_targets[t], self.cfg).mean() * self.cfg.rho**t
+				# quantile_loss = self.quantile_regression_loss(qs[q][t], td_targets[t])
+				# value_loss += quantile_loss * self.cfg.rho**t
 		consistency_loss *= (1/self.cfg.horizon)
 		reward_loss *= (1/self.cfg.horizon)
 		value_loss *= (1/(self.cfg.horizon * self.cfg.num_q))
+  
 		total_loss = (
 			self.cfg.consistency_coef * consistency_loss +
 			self.cfg.reward_coef * reward_loss +
 			self.cfg.value_coef * value_loss
 		)
+  
+		# Compute distillation loss if teacher model is provided
+		if self.teacher_model is not None:
+			with torch.no_grad():
+				# Teacher outputs
+				teacher_z = self.teacher_model.model.encode(obs[0], task)
+				teacher_reward_logits = self.teacher_model.model.reward(teacher_z, action[0], task)
+				teacher_reward = math.two_hot_inv(teacher_reward_logits, self.cfg)
+				# teacher_q_logits = self.teacher_model.model.Q(teacher_z, action[0], task, return_type='avg')
+				# teacher_q = math.two_hot_inv(teacher_q_logits, self.cfg)
+			# Student outputs
+			student_z = self.model.encode(obs[0], task)
+			student_reward_logits = self.model.reward(student_z, action[0], task)
+			student_reward = math.two_hot_inv(student_reward_logits, self.cfg)
+			# student_q_logits = self.model.Q(student_z, action[0], task, return_type='avg')
+			# student_q = math.two_hot_inv(student_q_logits, self.cfg)
+			# Distillation losses
+			reward_distill_loss = F.mse_loss(student_reward, teacher_reward)
+			# q_distill_loss = F.mse_loss(student_q, teacher_q)
+			distill_loss = reward_distill_loss # + q_distill_loss
+			# Add distillation loss to total loss
+			alpha = 0.4 # 0.05  # e.g., 0.5
+			total_loss = total_loss + alpha * distill_loss
 
 		# Update model
 		total_loss.backward()
 		grad_norm = torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.cfg.grad_clip_norm)
-		# self.optim.step()
+		self.optim.step()
 
 		# Update policy
 		pi_loss = self.update_pi(zs.detach(), task)
+		# GAE version
+		# pi_loss = self.update_pi(zs.detach(), action, reward, next_z.detach(), task)
 
 		# Update target Q-functions
 		self.model.soft_update_target_Q()
 
 		# Return training statistics
 		self.model.eval()
-		return {
+		stats = {
 			"consistency_loss": float(consistency_loss.mean().item()),
 			"reward_loss": float(reward_loss.mean().item()),
 			"value_loss": float(value_loss.mean().item()),
@@ -293,3 +323,12 @@ class TDMPC2:
 			"grad_norm": float(grad_norm),
 			"pi_scale": float(self.scale.value),
 		}
+		if self.teacher_model is not None:
+			stats.update({
+				"distillation_loss": float(distill_loss.mean().item()),
+				"reward_distill_loss": float(reward_distill_loss.mean().item()),
+				# "q_distill_loss": float(q_distill_loss.mean().item()),
+			})
+   
+		wandb.log(stats)
+		return stats
