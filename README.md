@@ -1,26 +1,26 @@
+## mt80
+sudo mount /dev/sda1 /mnt/nas0
+/mnt/nas0/mt80
+
+17.85 200k
+/home/dmytrok/rl_exp/tdmpc2-opt/tdmpc2/logs/mt30/1/mt30_317to1M_200k_steps_noQ_buffer60k_dist0_4_20240923/models/final.pt
+
 # Experiments
 
-python evaluate.py task=mt30 model_size=5 checkpoint=/home/dmytrok/Desktop/tdmpc2/tdmpc2/logs/mt30/1/multi_distill_mt30_BS1024_300K_steps/models/final.pt
+python evaluate.py task=mt30 model_size=5 checkpoint=/home/dmytrok/rl_exp/tdmpc2-opt/tdmpc2/logs/mt30/1/multi_distill_mt30_317to1M_200k/models/10000.pt
 
 python train.py task=mt30 model_size=5 checkpoint=/home/dmytrok/Desktop/tdmpc2/tdmpc2/models/mt30-5M.pt
 
 python train.py task=mt30 model_size=1
 
-python evaluate.py task=mt30 model_size=1 checkpoint=/home/dmytrok/rl_exp/tdmpc2-opt/tdmpc2/logs/mt30/1/mt30_1M_from_scratch_200k_fulldata/models/final.pt
+python evaluate.py task=mt30 model_size=1 checkpoint=/home/dmytrok/rl_exp/tdmpc2-opt/tdmpc2/logs/mt30/1/mt30_100k_distill_init_1k/models/final.pt
 
 
 # encoder dim == MLP dim == 1792, latent state dim 768, 4 enc layers, 5 q-funcs
-python train.py task=mt30 model_size=48 checkpoint=/home/dmytrok/Desktop/tdmpc2/tdmpc2/models/mt30-48M.pt
+python train.py task=mt30 model_size=48 checkpoint=/home/dmytrok/Desktop/tdmpc2/tdmpc2/models/mt30-48M.pt 
 
-num_enc_layers: 5
-enc_dim: 4096
-num_channels: 32
-mlp_dim: 4096  
-latent_dim: 1376 
-task_dim: 96
-num_q: 8
-python train.py task=mt30 model_size=317 checkpoint=/home/dmytrok/rl_exp/tdmpc2-opt/tdmpc2/models/mt30-317M.pt
-python evaluate.py task=mt30 model_size=317 checkpoint=/home/dmytrok/rl_exp/tdmpc2-opt/tdmpc2/logs/mt30/1/multi_distill_mt30_317M_1M_200K_steps_full_data/models/final.pt
+python train.py task=mt30 checkpoint=/home/dmytrok/rl_exp/tdmpc2-opt/tdmpc2/models/mt30-317M.pt
+python evaluate.py checkpoint=/home/dmytrok/rl_exp/tdmpc2-opt/tdmpc2/logs/mt30/1/mt30_RL_modified_GAE_QR_hyperparams_100k/models/final.pt
 
 ##
 47.01 GB / 345,690,000 samples ≈ 0.136 MB per sample

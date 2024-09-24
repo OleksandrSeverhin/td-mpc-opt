@@ -22,7 +22,6 @@ class WorldModel(nn.Module):
 			for i in range(len(cfg.tasks)):
 				self._action_masks[i, :cfg.action_dims[i]] = 1.
 		self._encoder = layers.enc(cfg)
-		# self._decoder = self._make_decoder(cfg)
 		self._dynamics = layers.mlp(cfg.latent_dim + cfg.action_dim + cfg.task_dim, 2*[cfg.mlp_dim], cfg.latent_dim, act=layers.SimNorm(cfg))
 		self._reward = layers.mlp(cfg.latent_dim + cfg.action_dim + cfg.task_dim, 2*[cfg.mlp_dim], max(cfg.num_bins, 1))
 		self._pi = layers.mlp(cfg.latent_dim + cfg.task_dim, 2*[cfg.mlp_dim], 2*cfg.action_dim)
@@ -47,19 +46,6 @@ class WorldModel(nn.Module):
 		self.log_std_min = self.log_std_min.to(*args, **kwargs)
 		self.log_std_dif = self.log_std_dif.to(*args, **kwargs)
 		return self
-
-	# def _make_decoder(self, cfg):
-	# 	# Mirror the encoder structure
-	# 	layers = []
-	# 	for i in range(cfg.num_enc_layers - 1, -1, -1):
-	# 		layers.append(nn.Linear(cfg.mlp_dim if i == cfg.num_enc_layers - 1 else cfg.enc_dim,
-	# 								cfg.enc_dim if i > 0 else cfg.obs_shape))
-	# 		if i > 0:
-	# 			layers.append(nn.ReLU())
-	# 	return nn.Sequential(*layers)
-
-	# def decode(self, z):
-	# 	return self._decoder(z)
 	
 	def train(self, mode=True):
 		"""
@@ -160,6 +146,29 @@ class WorldModel(nn.Module):
 		mu, pi, log_pi = math.squash(mu, pi, log_pi)
 
 		return mu, pi, log_pi, log_std
+
+	# QR-DQN
+	# def Q(self, z, a, task, return_type='min', target=False):
+	# 	"""
+	# 	Predict state-action value distribution using QR-DQN.
+	# 	"""
+	# 	assert return_type in {'min', 'avg', 'all'}
+
+	# 	if self.cfg.multitask:
+	# 		z = self.task_emb(z, task)
+			
+	# 	z = torch.cat([z, a], dim=-1)
+	# 	out = (self._target_Qs if target else self._Qs)(z)  # Shape: (num_q, batch_size, num_quantiles)
+
+	# 	if return_type == 'all':
+	# 		return out
+
+	# 	Q1, Q2 = out[np.random.choice(self.cfg.num_q, 2, replace=False)]
+	# 	if return_type == 'min':
+	# 		return torch.min(Q1, Q2)
+	# 	else:
+	# 		return (Q1 + Q2) / 2
+
 
 	def Q(self, z, a, task, return_type='min', target=False):
 		"""

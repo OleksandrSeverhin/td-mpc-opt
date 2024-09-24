@@ -22,7 +22,7 @@ from common.logger import Logger
 torch.backends.cudnn.benchmark = True
 
 # config_multi_distill, config_single_distill, config
-@hydra.main(config_name='config_multi_distill', config_path='.') # config
+@hydra.main(config_name='generic', config_path='.') # config
 def train(cfg: dict):
 	"""
 	Script for training single-task / multi-task TD-MPC2 agents.
@@ -43,35 +43,26 @@ def train(cfg: dict):
 	```
 	"""
 	assert torch.cuda.is_available()
-	assert cfg.steps > 0, 'Must train for at least 1 step.'
-	cfg = parse_cfg(cfg)
-	set_seed(cfg.seed)
-	print(colored('Work dir:', 'yellow', attrs=['bold']), cfg.work_dir)
+	# assert cfg.steps > 0, 'Must train for at least 1 step.'
+	cfg_teacher = parse_cfg(cfg.model2)
+	set_seed(cfg_teacher.seed)
+	env = make_env(cfg_teacher)
+	buffer = Buffer(cfg_teacher)
+	teacher_model = TDMPC2(cfg_teacher)
+	teacher_model.load(cfg_teacher.checkpoint)  # Load 317M pretrained 
+	print(colored('Work dir:', 'yellow', attrs=['bold']), cfg_teacher.work_dir)
+ 
+	cfg_student = parse_cfg(cfg.model1)
+	env = make_env(cfg_student)
+	buffer = Buffer(cfg_student)
+	student_model = TDMPC2(cfg_student, teacher_model) 
 
-	env = make_env(cfg)
-	buffer = Buffer(cfg)
-	cfg.steps = 200000  # Set total steps to 200k
-	cfg.buffer_size = 20000  # Set buffer size to 20k
-
-	teacher_model = TDMPC2(cfg)
-	teacher_model.load(cfg.checkpoint)  # Load 317M pretrained checkpoint
-
-	cfg.model_size = 1  # Set student model size to 1M
-	cfg.num_enc_layers = 2
-	cfg.enc_dim = 256
-	cfg.mlp_dim = 384
-	cfg.latent_dim = 128
-	cfg.num_q = 2
-
-	student_model = TDMPC2(cfg)  # 1M non-trained model
-
-	trainer = DistillationOfflineTrainer(
-		cfg=cfg,
+	trainer = OfflineTrainer(
+		cfg=cfg_student,
 		env=env,
 		agent=student_model,
 		buffer=buffer,
-		logger=Logger(cfg),
-		teacher_model=teacher_model
+		logger=Logger(cfg_student)
 	)
 
 	# trainer.collect_teacher_latents()
