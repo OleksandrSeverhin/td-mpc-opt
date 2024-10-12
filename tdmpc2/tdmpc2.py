@@ -264,8 +264,6 @@ class TDMPC2:
 			reward_loss += math.soft_ce(reward_preds[t], reward[t], self.cfg).mean() * self.cfg.rho**t
 			for q in range(self.cfg.num_q):
 				value_loss += math.soft_ce(qs[q][t], td_targets[t], self.cfg).mean() * self.cfg.rho**t
-				# quantile_loss = self.quantile_regression_loss(qs[q][t], td_targets[t])
-				# value_loss += quantile_loss * self.cfg.rho**t
 		consistency_loss *= (1/self.cfg.horizon)
 		reward_loss *= (1/self.cfg.horizon)
 		value_loss *= (1/(self.cfg.horizon * self.cfg.num_q))
@@ -283,20 +281,17 @@ class TDMPC2:
 				teacher_z = self.teacher_model.model.encode(obs[0], task)
 				teacher_reward_logits = self.teacher_model.model.reward(teacher_z, action[0], task)
 				teacher_reward = math.two_hot_inv(teacher_reward_logits, self.cfg)
-				# teacher_q_logits = self.teacher_model.model.Q(teacher_z, action[0], task, return_type='avg')
-				# teacher_q = math.two_hot_inv(teacher_q_logits, self.cfg)
 			# Student outputs
 			student_z = self.model.encode(obs[0], task)
 			student_reward_logits = self.model.reward(student_z, action[0], task)
 			student_reward = math.two_hot_inv(student_reward_logits, self.cfg)
-			# student_q_logits = self.model.Q(student_z, action[0], task, return_type='avg')
-			# student_q = math.two_hot_inv(student_q_logits, self.cfg)
 			# Distillation losses
 			reward_distill_loss = F.mse_loss(student_reward, teacher_reward)
-			# q_distill_loss = F.mse_loss(student_q, teacher_q)
+			# Compute auxiliary losses
 			distill_loss = reward_distill_loss # + q_distill_loss
-			# Add distillation loss to total loss
-			alpha = 0.4 # 0.05  # e.g., 0.5
+
+			# Combine losses
+			alpha = 0.45 # 0.05  # e.g., 0.5
 			total_loss = total_loss + alpha * distill_loss
 
 		# Update model
@@ -327,7 +322,7 @@ class TDMPC2:
 			stats.update({
 				"distillation_loss": float(distill_loss.mean().item()),
 				"reward_distill_loss": float(reward_distill_loss.mean().item()),
-				# "q_distill_loss": float(q_distill_loss.mean().item()),
+				# "q_distill_loss": float(q_distill_loss.mean().item())
 			})
    
 		wandb.log(stats)

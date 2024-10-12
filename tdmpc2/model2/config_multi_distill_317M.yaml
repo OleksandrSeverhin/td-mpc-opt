@@ -1,5 +1,5 @@
 # environment
-task: mt30
+task: mt30 # mt30
 obs: state
 
 # evaluation
@@ -21,10 +21,9 @@ tau: 0.01
 discount_denom: 5
 discount_min: 0.95
 discount_max: 0.995
-buffer_size: 1_000_000
-exp_name: mt30_distill_317to5M_100k
-data_dir: /home/dmytrok/rl_exp/tdmpc2-opt/tdmpc2/data/mt30
-
+buffer_size: 60000
+exp_name: mt30_distill_317to1
+data_dir: /mnt/nas0/mt30/data/mt30 # /mnt/nas0/mt30
 # planning
 mpc: true
 iterations: 6

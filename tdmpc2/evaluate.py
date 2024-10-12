@@ -25,7 +25,7 @@ def format_time(seconds):
     return str(timedelta(seconds=int(seconds)))
 
 # config, config_multi_distill
-@hydra.main(config_name='config_multi_distill', config_path='./model1')
+@hydra.main(config_name='config_mt30', config_path='./model1')
 def evaluate(cfg: dict):
 	"""
 	Script for evaluating a single-task / multi-task TD-MPC2 checkpoint.
@@ -75,6 +75,10 @@ def evaluate(cfg: dict):
 
 	assert os.path.exists(cfg.checkpoint), f'Checkpoint {cfg.checkpoint} not found! Must be a valid filepath.'
 	agent.load(cfg.checkpoint)
+	# load quantiazed version
+	# state_dict = torch.load('/home/dmytrok/rl_exp/tdmpc2-opt/tdmpc2/mt30_distill_fp16.pt')
+	# agent.model.load_state_dict(state_dict['model'])
+	
 	
 	# Evaluate
 	if cfg.multitask:

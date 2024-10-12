@@ -1,6 +1,6 @@
 # config.yaml
 defaults:
-  - model1: config_mt30
-  - model2: config_multi_distill_317M
+  - model1: config_mt30 # mt30
+  - model2: config_multi_distill_317M # config_multi_distill_317M
   - _self_
   - override hydra/launcher: submitit_local  # or whatever launcher you're using

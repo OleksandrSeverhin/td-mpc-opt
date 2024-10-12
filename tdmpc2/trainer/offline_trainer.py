@@ -74,7 +74,7 @@ class OfflineTrainer(Trainer):
 		# Create buffer for sampling
 		_cfg = deepcopy(self.cfg)
 		_cfg.episode_length = 101 if self.cfg.task == 'mt80' else 501
-		_cfg.buffer_size = 345_690_000  # 60M steps
+		_cfg.buffer_size = 380_450_000 if self.cfg.task == 'mt80' else 345_690_000 # 550_450_000 mt80
 		_cfg.steps = _cfg.buffer_size  # Match the buffer size for full GPU utilization
 		self.buffer = Buffer(_cfg)
 
@@ -97,62 +97,7 @@ class OfflineTrainer(Trainer):
   
 		for i in tqdm(range(self.cfg.steps)):
 			train_metrics = self.agent.update(self.buffer) #self.update_agent()
-			if i != 0 and i % 5000 == 0:
+			if i != 0 and i % 50000 == 0 or i % 337000 == 0:
 				self.logger.save_agent(self.agent, identifier=f'{i}')
     
 		self.logger.finish(self.agent)
-
-
-class DistillationOfflineTrainer(OfflineTrainer):
-	def __init__(self, cfg, env, agent, buffer, logger, teacher_model):
-		super().__init__(cfg, env, agent, buffer, logger)
-		self.teacher_model = teacher_model
-		self.distillation_weight = cfg.distillation_weight
-		self.distillation_temperature = cfg.distillation_temperature
-		
-		self.device = next(self.agent.model.parameters()).device
-
-	# @profile_with_line_profiler
-	def update_agent(self):
-		batch = self.buffer.sample()
-		obs, action, reward, task = batch 
-
-		with torch.no_grad():
-			teacher_z = self.teacher_model.model.encode(obs[0].to(self.device), task)
-			teacher_reward = self.teacher_model.model.reward(teacher_z, action[0].to(self.device), task)
-			teacher_q = self.teacher_model.model.Q(teacher_z, action[0].to(self.device), task)
-
-		student_z = self.agent.model.encode(obs[0].to(self.device), task)
-		student_reward = self.agent.model.reward(student_z, action[0].to(self.device), task)
-		student_q = self.agent.model.Q(student_z, action[0].to(self.device), task)
-
-		reward_loss = F.mse_loss(student_reward, teacher_reward)
-		q_loss = F.kl_div(
-			F.log_softmax(student_q / self.distillation_temperature, dim=-1),
-			F.softmax(teacher_q / self.distillation_temperature, dim=-1),
-			reduction='batchmean'
-		) * (self.distillation_temperature ** 2)
-  
-		dist_loss = reward_loss + q_loss
-		
-		original_loss_dict = self.agent.update(obs, action, reward, task)
-
-		alpha = self.distillation_weight
-		total_loss = original_loss_dict['total_loss'] + alpha * dist_loss
-
-		self.agent.optim.zero_grad()
-		total_loss.backward()
-		torch.nn.utils.clip_grad_norm_(self.agent.model.parameters(), self.agent.cfg.grad_clip_norm)
-		self.agent.optim.step()
-
-		original_loss_dict.update({
-			'distillation_loss': dist_loss.item(),
-			'total_loss': total_loss.item()
-		})
-
-		wandb.log({
-			'distillation_loss': dist_loss.item(),
-			'total_loss': total_loss.item(),
-		})
-
-		return original_loss_dict
