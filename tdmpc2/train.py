@@ -45,20 +45,20 @@ def train(cfg: dict):
 	# assert cfg.steps > 0, 'Must train for at least 1 step.'
  
 	### optional teacher for distill
-	# cfg_teacher = parse_cfg(cfg.model2)
-	# set_seed(cfg_teacher.seed)
-	# env = make_env(cfg_teacher)
-	# buffer = Buffer(cfg_teacher)
-	# teacher_model = TDMPC2(cfg_teacher)
-	# teacher_model.load(cfg_teacher.checkpoint)  # Load 317M pretrained 
+	cfg_teacher = parse_cfg(cfg.model2)
+	set_seed(cfg_teacher.seed)
+	env = make_env(cfg_teacher)
+	buffer = Buffer(cfg_teacher)
+	teacher_model = TDMPC2(cfg_teacher)
+	teacher_model.load(cfg_teacher.checkpoint)  # Load 317M pretrained 
 
  
 	cfg_student = parse_cfg(cfg.model1)
 	set_seed(cfg_student.seed)
 	env = make_env(cfg_student)
 	buffer = Buffer(cfg_student)
-	# student_model = TDMPC2(cfg_student, teacher_model) # distill
-	student_model = TDMPC2(cfg_student) #, teacher_model) # from scratch
+	student_model = TDMPC2(cfg_student, teacher_model) # distill
+	# student_model = TDMPC2(cfg_student) #, teacher_model) # from scratch
 	# state_dict = torch.load('/home/dmytrok/rl_exp/tdmpc2-opt/tdmpc2/logs/mt30/1/mt30_317to1M_200k_steps_noQ_buffer60k_dist0_4_20240923/models/final.pt')
 	# student_model.model.load_state_dict(state_dict['model'])
  

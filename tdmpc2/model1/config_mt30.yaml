@@ -8,7 +8,7 @@ eval_episodes: 10
 eval_freq: ???
 
 # training
-steps: 337_000
+steps: 200_000
 batch_size: 1024
 reward_coef: 0.1
 value_coef: 0.1
@@ -21,8 +21,8 @@ tau: 0.01
 discount_denom: 5
 discount_min: 0.95
 discount_max: 0.995
-buffer_size: 1000000 # matters not
-exp_name: mt30_from_scratch_BS1024_full_337K_steps
+buffer_size: 1000000 
+exp_name: mt30_dist045_BS128_200K_steps_20241012
 data_dir: /mnt/nas0/mt30/data/mt30
 
 # planning

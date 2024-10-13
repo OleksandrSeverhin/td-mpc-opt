@@ -72,7 +72,18 @@ class TDMPC2:
 			fp (str or dict): Filepath or state dict to load.
 		"""
 		state_dict = fp if isinstance(fp, dict) else torch.load(fp)
-		self.model.load_state_dict(state_dict["model"])
+		
+		def dequantize_tensor(tensor):
+			if tensor.is_quantized:
+				return tensor.dequantize()
+			return tensor
+
+		dequantized_state_dict = {
+			k: dequantize_tensor(v) if isinstance(v, torch.Tensor) else v
+			for k, v in state_dict["model"].items()
+		}	
+
+		self.model.load_state_dict(dequantized_state_dict) # ["model"]
 
 	@torch.no_grad()
 	def act(self, obs, t0=False, eval_mode=False, task=None):
