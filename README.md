@@ -1,12 +1,12 @@
 # TD-MPC2 Opt: Knowledge Transfer in Model-Based Reinforcement Learning Agents for Efficient Multi-Task Learning
 ----------------------------------------------------------------------------------
-the quantized model checkpoints are located under `./models`
+The quantized model (1M steps, batch size 256) checkpoints are located under `./models`
 ## Train
 1. Configure the student `student_config/config_mt30.yaml` and teacher `teacher_config/config_multi_distill_317M.yaml` configs
 2. `python train.py`
 ----------------------------------------------------------------------------------
 ## Eval
-`python evaluate.py checkpoint=/models/mt30_1M_steps_045dist_fp16.pt`
+1. `python evaluate.py checkpoint=/models/mt30_1M_steps_045dist_fp16.pt`
 ----------------------------------------------------------------------------------
 <h1>TD-MPC2</span></h1>
 
