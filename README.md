@@ -1,63 +1,13 @@
-## mt80
-sudo mount /dev/sda1 /mnt/nas0
-/mnt/nas0/mt80
-
-17.85 200k
-/home/dmytrok/rl_exp/tdmpc2-opt/tdmpc2/logs/mt30/1/mt30_317to1M_200k_steps_noQ_buffer60k_dist0_4_20240923/models/final.pt
-
-# Experiments
-
-python evaluate.py task=mt30 model_size=5 checkpoint=/home/dmytrok/rl_exp/tdmpc2-opt/tdmpc2/logs/mt30/1/multi_distill_mt30_317to1M_200k/models/10000.pt
-
-python train.py task=mt30 model_size=5 checkpoint=/home/dmytrok/Desktop/tdmpc2/tdmpc2/models/mt30-5M.pt
-
-python train.py task=mt30 model_size=1
-
-python evaluate.py task=mt30 model_size=1 checkpoint=/home/dmytrok/rl_exp/tdmpc2-opt/tdmpc2/logs/mt30/1/mt30_100k_distill_init_1k/models/final.pt
-
-
-# encoder dim == MLP dim == 1792, latent state dim 768, 4 enc layers, 5 q-funcs
-python train.py task=mt30 model_size=48 checkpoint=/home/dmytrok/Desktop/tdmpc2/tdmpc2/models/mt30-48M.pt 
-
-python train.py task=mt30 checkpoint=/home/dmytrok/rl_exp/tdmpc2-opt/tdmpc2/models/mt30-317M.pt
-python evaluate.py checkpoint=/home/dmytrok/rl_exp/tdmpc2-opt/tdmpc2/logs/mt30/1/mt30_RL_modified_GAE_QR_hyperparams_100k/models/final.pt
-
-##
-47.01 GB / 345,690,000 samples ≈ 0.136 MB per sample
-
+# TD-MPC2 Opt: Knowledge Transfer in Model-Based Reinforcement Learning Agents for Efficient Multi-Task Learning
 ----------------------------------------------------------------------------------
-# Train
-
-## Single
-python train.py task=reacher-three-hard checkpoint=/home/dmytrok/Desktop/tdmpc2/tdmpc2/models/reacher-three-hard-1.pt
-
-## Multi Distill
-
-python train.py task=mt30 model_size=5 checkpoint=/home/dmytrok/Desktop/tdmpc2/tdmpc2/models/mt30-5M.pt
+the quantized model checkpoints are located under `./models`
+## Train
+1. Configure the student `student_config/config_mt30.yaml` and teacher `teacher_config/config_multi_distill_317M.yaml` configs
+2. `python train.py`
 ----------------------------------------------------------------------------------
-
-# Eval
-## baseline
-python evaluate.py task=mt30 model_size=5 checkpoint=/home/dmytrok/Desktop/tdmpc2/tdmpc2/models/mt30-5M.pt
-
-## MT30
-python evaluate.py task=mt30 model_size=5 checkpoint=/home/dmytrok/Desktop/tdmpc2/tdmpc2/logs/mt30/1/multi_distill_900k_70_perecent_data/models/900000.pt
-
-
-python evaluate.py task=reacher-three-hard checkpoint=/home/dmytrok/Desktop/tdmpc2/tdmpc2/models/reacher-three-hard-1.pt
-python evaluate.py task=reacher-three-hard checkpoint=/home/dmytrok/Desktop/tdmpc2/tdmpc2/logs/reacher-three-hard/1/distill-reacher-hard/models/distill-reacher-three-hard-150k.pt
-
-python evaluate.py task=reacher-three-hard checkpoint=/home/dmytrok/Desktop/tdmpc2/tdmpc2/logs/reacher-three-hard/1/distill-reacher-hard/models/final.pt
-
-## exps
-python evaluate.py task=mt30 model_size=5 checkpoint=/home/dmytrok/Desktop/tdmpc2/tdmpc2/models/mt30_5M_fp16.pt
-python evaluate.py task=mt30 model_size=19 checkpoint=/home/dmytrok/Desktop/tdmpc2/tdmpc2/models/mt30_19M_fp16.pt
-
-### pruning
-python evaluate.py task=mt30 model_size=5 checkpoint=/home/dmytrok/Desktop/tdmpc2/tdmpc2/models/mt30_5M_pruned.pt
+## Eval
+`python evaluate.py checkpoint=/models/mt30_1M_steps_045dist_fp16.pt`
 ----------------------------------------------------------------------------------
-
-
 <h1>TD-MPC2</span></h1>
 
 Official implementation of

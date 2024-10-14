@@ -233,7 +233,7 @@ class TDMPC2:
 		discount = self.discount[task].unsqueeze(-1) if self.cfg.multitask else self.discount
 		return reward + discount * self.model.Q(next_z, pi, task, return_type='min', target=True)
 
-	def update(self, buffer): # buffer): # replace `buffer` with 4-tuple batch
+	def update(self, buffer):
 		"""
 		Main update function. Corresponds to one iteration of model learning.
 		
@@ -288,21 +288,18 @@ class TDMPC2:
 		# Compute distillation loss if teacher model is provided
 		if self.teacher_model is not None:
 			with torch.no_grad():
-				# Teacher outputs
 				teacher_z = self.teacher_model.model.encode(obs[0], task)
 				teacher_reward_logits = self.teacher_model.model.reward(teacher_z, action[0], task)
 				teacher_reward = math.two_hot_inv(teacher_reward_logits, self.cfg)
-			# Student outputs
 			student_z = self.model.encode(obs[0], task)
 			student_reward_logits = self.model.reward(student_z, action[0], task)
 			student_reward = math.two_hot_inv(student_reward_logits, self.cfg)
-			# Distillation losses
+
 			reward_distill_loss = F.mse_loss(student_reward, teacher_reward)
-			# Compute auxiliary losses
-			distill_loss = reward_distill_loss # + q_distill_loss
+			distill_loss = reward_distill_loss
 
 			# Combine losses
-			alpha = 0.45 # 0.05  # e.g., 0.5
+			alpha = 0.45 # 0.05, 0.4, 0.6 d_coef
 			total_loss = total_loss + alpha * distill_loss
 
 		# Update model
@@ -312,8 +309,6 @@ class TDMPC2:
 
 		# Update policy
 		pi_loss = self.update_pi(zs.detach(), task)
-		# GAE version
-		# pi_loss = self.update_pi(zs.detach(), action, reward, next_z.detach(), task)
 
 		# Update target Q-functions
 		self.model.soft_update_target_Q()
@@ -333,7 +328,6 @@ class TDMPC2:
 			stats.update({
 				"distillation_loss": float(distill_loss.mean().item()),
 				"reward_distill_loss": float(reward_distill_loss.mean().item()),
-				# "q_distill_loss": float(q_distill_loss.mean().item())
 			})
    
 		wandb.log(stats)

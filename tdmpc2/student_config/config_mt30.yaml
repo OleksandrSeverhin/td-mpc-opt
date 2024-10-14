@@ -3,13 +3,13 @@ task: mt30
 obs: state
 
 # evaluation
-checkpoint: /home/dmytrok/rl_exp/tdmpc2-opt/tdmpc2/models/mt30-317M.pt
+checkpoint: ???
 eval_episodes: 10
 eval_freq: ???
 
 # training
-steps: 200000
-batch_size: 256
+steps: 200_000 # 337_000, 1_000_000
+batch_size: 1024
 reward_coef: 0.1
 value_coef: 0.1
 consistency_coef: 20
@@ -21,25 +21,25 @@ tau: 0.01
 discount_denom: 5
 discount_min: 0.95
 discount_max: 0.995
-buffer_size: 30000
-exp_name: mt30_317to1M_10k_steps_20240921
-data_dir: /home/dmytrok/rl_exp/tdmpc2-opt/tdmpc2/data/mt30
+buffer_size: 1000000 
+exp_name: ???
+data_dir: /path/to/data/mt30
 
 # planning
 mpc: true
-iterations: 6 # 6
-num_samples: 512 # 512
-num_elites: 64 # 64
+iterations: 6 
+num_samples: 512
+num_elites: 64
 num_pi_trajs: 24
-horizon: 3 # 6
+horizon: 3 
 min_std: 0.05
 max_std: 2
-temperature: 0.5 # 0.5
+temperature: 0.5 
 
 # actor
 log_std_min: -10
 log_std_max: 2
-entropy_coef: 1e-4 # 1e-4
+entropy_coef: 1e-4 
 
 # critic
 num_bins: 101
@@ -63,8 +63,8 @@ dropout: 0.01
 simnorm_dim: 8
 
 # logging
-wandb_project: worldmodels
-wandb_entity: dmytrokuzmenko
+wandb_project: ???
+wandb_entity: ???
 wandb_silent: false
 disable_wandb: false
 save_csv: true

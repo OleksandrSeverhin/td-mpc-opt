@@ -26,7 +26,7 @@ discount_min: 0.95
 discount_max: 0.995
 buffer_size: 20_000
 exp_name: mt30_1M_from_scratch_200k_fulldata
-data_dir: /home/dmytrok/rl_exp/tdmpc2-opt/tdmpc2/data/mt30 # 
+data_dir: ???
 
 # planning
 mpc: true
@@ -61,10 +61,9 @@ num_q: 2 # 5 2
 dropout: 0.01
 simnorm_dim: 8
 
-# 815e64c5d81b4d168e36a8f3c4780872fbd642da
 # logging
-wandb_project: worldmodels
-wandb_entity: dmytrokuzmenko
+wandb_project: ???
+wandb_entity: ???
 wandb_silent: false
 disable_wandb: false # true
 save_csv: true
@@ -87,7 +86,3 @@ action_dims: ???
 episode_lengths: ???
 seed_steps: ???
 bin_size: ???
-
-# distillation
-distillation_temperature: 2.0
-distillation_weight: 0.5 # [0.1..1]
