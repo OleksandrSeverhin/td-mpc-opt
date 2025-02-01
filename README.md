@@ -1,4 +1,4 @@
-# TD-MPC2 Opt: Knowledge Transfer in Model-Based Reinforcement Learning Agents for Efficient Multi-Task Learning
+# TD-MPC-Opt: Distilling Model-Based Multi-Task Reinforcement Learning Agents
 ----------------------------------------------------------------------------------
 The quantized model (1M steps, batch size 256) checkpoints are located under `./models`
 ## Train
