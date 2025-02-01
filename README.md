@@ -1,5 +1,7 @@
 # TD-MPC-Opt: Distilling Model-Based Multi-Task Reinforcement Learning Agents
 [Paper](https://arxiv.org/abs/2501.05329)
+
+![method](./assets/fig2.jpg)
 ----------------------------------------------------------------------------------
 ## 🚀 Overview
 TD-MPC-Opt extends **[TD-MPC2](https://github.com/nicklashansen/tdmpc2)** by introducing a distilled, quantized version of the multi-task reinforcement learning agent. This approach improves computational efficiency while maintaining strong performance across the **MT30** benchmark.
@@ -50,6 +52,9 @@ Training is configured using Hydra. The key configuration files are:
 These configs define architecture, hyperparameters, sampling strategies, and MPC components. To modify any aspect of training, update these YAML files accordingly.
 Modify them as needed before running:
 ```python train.py``` (see the script for the full list of cmd parameters)
+
+The distillation coefficient is an important parameter that defines the impact of distillation loss on the overall learning process
+[!dist_coef_table](./assets/table1.png)
 
 ### Training Variations
 - Batch Size: Reducing from 1024 (original) to 256 tends to improve convergence consistently.
