@@ -1,4 +1,5 @@
 # TD-MPC-Opt: Distilling Model-Based Multi-Task Reinforcement Learning Agents
+[Paper](https://arxiv.org/abs/2501.05329)
 ----------------------------------------------------------------------------------
 ## 🚀 Overview
 TD-MPC-Opt extends **[TD-MPC2](https://github.com/nicklashansen/tdmpc2)** by introducing a distilled, quantized version of the multi-task reinforcement learning agent. This approach improves computational efficiency while maintaining strong performance across the **MT30** benchmark.
