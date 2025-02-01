@@ -54,7 +54,8 @@ Modify them as needed before running:
 ```python train.py``` (see the script for the full list of cmd parameters)
 
 The distillation coefficient is an important parameter that defines the impact of distillation loss on the overall learning process
-[!dist_coef_table](./assets/table1.png)
+
+[!dist](./assets/table1.png)
 
 ### Training Variations
 - Batch Size: Reducing from 1024 (original) to 256 tends to improve convergence consistently.
