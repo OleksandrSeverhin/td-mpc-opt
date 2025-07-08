@@ -36,7 +36,7 @@ def train(cfg: dict):
 	Example usage:
 	```
 		$ python train.py task=mt80 model_size=48
-		$ python train.py task=mt30 model_size=317
+		$ python train.py task=mt30 model_size=317S
 		$ python train.py task=dog-run steps=7000000
 	```
 	"""
