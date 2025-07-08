@@ -1,4 +1,4 @@
-def get_distillation_coefficient(step: int, schedule: str = "decrease", total_steps: int = 1_000_000, base_coef: float = 0.5) -> float:
+def get_distillation_coefficient(step: int, schedule: str = "four_phase", total_steps: int = 1_000_000, base_coef: float = 0.5) -> float:
     if schedule == "four_phase":
         if step < 250_000:
             return 0.5
