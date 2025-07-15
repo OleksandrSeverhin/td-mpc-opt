@@ -26,6 +26,10 @@ buffer_size: 60000
 #exp_name: ???
 exp_name: multi_distill_317M
 
+distillation:
+  schedule: 'four_phase'
+  d_coef: 0.5
+  
 data_dir: path/to/data/mt30
 # planning
 mpc: true
