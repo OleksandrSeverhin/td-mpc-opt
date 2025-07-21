@@ -22,14 +22,7 @@ discount_denom: 5
 discount_min: 0.95
 discount_max: 0.995
 buffer_size: 60000
-
-#exp_name: ???
-exp_name: multi_distill_317M
-
-distillation:
-  schedule: 'four_phase'
-  d_coef: 0.5
-  
+exp_name: "multi_distill_317M"
 data_dir: path/to/data/mt30
 # planning
 mpc: true
