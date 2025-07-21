@@ -23,7 +23,7 @@ discount_min: 0.95
 discount_max: 0.995
 buffer_size: 60000
 exp_name: "multi_distill_317M"
-data_dir: path/to/data/mt30
+data_dir: /root/td-mpc-opt/data/mt30
 # planning
 mpc: true
 iterations: 6

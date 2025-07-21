@@ -23,7 +23,7 @@ discount_min: 0.95
 discount_max: 0.995
 buffer_size: 1000000 
 exp_name: name
-data_dir: /path/to/data/mt30
+data_dir: /root/td-mpc-opt/data/mt30
 
 # planning
 mpc: true
