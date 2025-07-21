@@ -1,0 +1,4 @@
+- +task=mt30
+- +model_size=317
+- ++student_config.exp_name=name
+- ++student_config.dataset_path=/root/td-mpc-opt/data
