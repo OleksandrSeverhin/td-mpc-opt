@@ -3,7 +3,6 @@ from copy import deepcopy
 from time import time
 from pathlib import Path
 from glob import glob
-from tdmpc2.utils import get_distillation_coefficient
 
 # import cProfile
 # import pstats
@@ -97,7 +96,7 @@ class OfflineTrainer(Trainer):
 		# self.distill_initialization()
   
 		for i in tqdm(range(self.cfg.steps)):
-			train_metrics = self.agent.update(self.buffer, step=i) #self.update_agent()
+			train_metrics = self.agent.update(self.buffer) #self.update_agent()
 			if i != 0 and i % 50000 == 0 or i % 337000 == 0:
 				self.logger.save_agent(self.agent, identifier=f'{i}')
     

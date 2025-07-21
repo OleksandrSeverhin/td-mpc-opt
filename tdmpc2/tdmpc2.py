@@ -7,7 +7,6 @@ from common import math
 from common.scale import RunningScale
 from common.world_model import WorldModel
 
-from tdmpc2.utils import get_distillation_coefficient
 
 class TDMPC2:
 	"""
@@ -234,7 +233,7 @@ class TDMPC2:
 		discount = self.discount[task].unsqueeze(-1) if self.cfg.multitask else self.discount
 		return reward + discount * self.model.Q(next_z, pi, task, return_type='min', target=True)
 
-	def update(self, buffer, step: int = 0):
+	def update(self, buffer):
 		"""
 		Main update function. Corresponds to one iteration of model learning.
 		
@@ -288,24 +287,19 @@ class TDMPC2:
   
 		# Compute distillation loss if teacher model is provided
 		if self.teacher_model is not None:
-			alpha = get_distillation_coefficient(
-				step=step,
-				schedule=self.cfg.distillation.schedule,
-				total_steps=self.cfg.steps,
-				base_coef=self.cfg.distillation.d_coef
-			)
-
 			with torch.no_grad():
 				teacher_z = self.teacher_model.model.encode(obs[0], task)
 				teacher_reward_logits = self.teacher_model.model.reward(teacher_z, action[0], task)
 				teacher_reward = math.two_hot_inv(teacher_reward_logits, self.cfg)
-
 			student_z = self.model.encode(obs[0], task)
 			student_reward_logits = self.model.reward(student_z, action[0], task)
 			student_reward = math.two_hot_inv(student_reward_logits, self.cfg)
 
 			reward_distill_loss = F.mse_loss(student_reward, teacher_reward)
 			distill_loss = reward_distill_loss
+
+			# Combine losses
+			alpha = 0.45 # 0.05, 0.4, 0.6 d_coef
 			total_loss = total_loss + alpha * distill_loss
 
 		# Update model
@@ -329,7 +323,6 @@ class TDMPC2:
 			"total_loss": float(total_loss.mean().item()),
 			"grad_norm": float(grad_norm),
 			"pi_scale": float(self.scale.value),
-			"distillation_coef": float(alpha) if self.teacher_model is not None else 0.0,
 		}
 		if self.teacher_model is not None:
 			stats.update({
