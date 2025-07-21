@@ -3,7 +3,7 @@ task: mt30
 obs: state
 
 # evaluation
-checkpoint: ./models/mt30-317M.pt
+checkpoint: /root/td-mpc-opt/tdmpc2/models/mt30-317M.pt
 eval_episodes: 10
 eval_freq: 50000
 
