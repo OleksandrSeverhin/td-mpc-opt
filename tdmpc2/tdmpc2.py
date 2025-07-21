@@ -7,7 +7,7 @@ from common import math
 from common.scale import RunningScale
 from common.world_model import WorldModel
 
-from tdmpc2.utils import get_distillation_coefficient
+from utils import get_distillation_coefficient
 
 class TDMPC2:
 	"""

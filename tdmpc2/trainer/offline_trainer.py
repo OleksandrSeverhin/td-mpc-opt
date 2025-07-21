@@ -3,7 +3,7 @@ from copy import deepcopy
 from time import time
 from pathlib import Path
 from glob import glob
-from tdmpc2.utils import get_distillation_coefficient
+from utils import get_distillation_coefficient
 
 # import cProfile
 # import pstats
