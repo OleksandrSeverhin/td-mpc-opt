@@ -2,7 +2,7 @@ from huggingface_hub import hf_hub_download
 import os
 
 # Target folder for dataset chunks
-target_dir = "data/mt30"
+target_dir = "data/"
 os.makedirs(target_dir, exist_ok=True)
 
 # Chunk filenames: chunk_0.pt to chunk_3.pt
