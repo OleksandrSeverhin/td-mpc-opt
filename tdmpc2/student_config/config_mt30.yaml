@@ -25,6 +25,11 @@ buffer_size: 1000000
 exp_name: name
 data_dir: /root/td-mpc-opt/data/mt30
 
+# distillation
+distillation:
+  schedule: "four_phase" 
+  d_coef: 0.4 
+
 # planning
 mpc: true
 iterations: 6 
