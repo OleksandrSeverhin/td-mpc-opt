@@ -31,15 +31,16 @@ def train(cfg: DictConfig):
         $ python train.py task=mt30 model_size=317
         $ python train.py task=dog-run steps=7_000_000
     """
-
     assert torch.cuda.is_available(), "CUDA is not available. Please check your GPU setup."
+
+    device = torch.device("cuda")
 
     # Load and initialize teacher
     cfg_teacher = parse_cfg(cfg.teacher_config)
     set_seed(cfg_teacher.seed)
     env = make_env(cfg_teacher)
     buffer = Buffer(cfg_teacher)
-    teacher_model = TDMPC2(cfg_teacher)
+    teacher_model = TDMPC2(cfg_teacher).to(device)
     teacher_model.load(cfg_teacher.checkpoint)
 
     # Load and initialize student
@@ -47,7 +48,7 @@ def train(cfg: DictConfig):
     set_seed(cfg_student.seed)
     env = make_env(cfg_student)
     buffer = Buffer(cfg_student)
-    student_model = TDMPC2(cfg_student, teacher_model=teacher_model)
+    student_model = TDMPC2(cfg_student, teacher_model=teacher_model).to(device)
 
     print(colored('Work dir:', 'yellow', attrs=['bold']), cfg_student.work_dir)
 
@@ -57,7 +58,7 @@ def train(cfg: DictConfig):
         env=env,
         agent=student_model,
         buffer=buffer,
-        logger=Logger(cfg_student)
+        logger=Logger(cfg_student)    
     )
 
     trainer.train()

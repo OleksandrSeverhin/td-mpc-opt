@@ -9,7 +9,7 @@ eval_freq: ???
 
 # training
 steps: 100_000 # 200_000, 337_000, 1_000_000
-batch_size: 1024
+batch_size: 256
 reward_coef: 0.1
 value_coef: 0.1
 consistency_coef: 20
@@ -21,7 +21,7 @@ tau: 0.01
 discount_denom: 5
 discount_min: 0.95
 discount_max: 0.995
-buffer_size: 1000000 
+buffer_size: 500_000 
 exp_name: name
 data_dir: /root/td-mpc-opt/data/mt30
 
