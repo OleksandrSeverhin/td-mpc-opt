@@ -337,5 +337,6 @@ class TDMPC2:
 				"reward_distill_loss": float(reward_distill_loss.mean().item()),
 			})
    
-		wandb.log(stats)
+		if wandb.run is not None:
+    		wandb.log(stats)
 		return stats
