@@ -3,7 +3,7 @@ task: mt30
 obs: state
 
 # evaluation
-checkpoint: ???
+checkpoint: /root/td-mpc-opt/tdmpc2/models/models--oleksandr-severhin--td-mpc-opt/snapshots/d152d673a316319defb2484794c8b03a20f9d261/mt30_1M_steps_50_decrease_final.pt
 eval_episodes: 10
 eval_freq: ???
 
