@@ -3,11 +3,11 @@ import math
 def get_distillation_coefficient(step: int, schedule: str = "four_phase", total_steps: int = 1_000_000, base_coef: float = 0.4) -> float:
     # Experiment with different distillation schedules
     if schedule == "four_phase":
-        if step < 250_000:
+        if step < total_steps/4:
             return 0.5
-        elif step < 500_000:
+        elif step <= total_steps/2:
             return 0.5
-        elif step < 750_000:
+        elif step <= 3 * total_steps / 4:
             return 0.75
         else:
             return 0.0
