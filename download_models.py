@@ -5,9 +5,9 @@ import os
 hf_token = os.getenv("HF_TOKEN")
 assert hf_token is not None, "HF_TOKEN environment variable is not set."
 
-models = ['mt30_1M_steps_50_constant_final.pt', 'mt30_1M_steps_50_four_phase_final.pt',
+models = ['mt30_1M_steps_50_constant_0.4_final.pt', 'mt30_1M_steps_50_constant_0.5_final.pt',
          'mt30_1M_steps_50_linear_decay_final.pt', 'mt30_1M_steps_50k_cosine_decay_final.pt',
-         'mt30_1M_steps_50_increase_final.pt', 'mt30_1M_steps_50_decrease_final.pt']
+         'mt30_1M_steps_50_increase_final.pt', 'mt30_1M_steps_50_decrease_final.pt', 'mt30_1M_steps_50_four_phase_final.pt']
 
 repo_id = "oleksandr-severhin/td-mpc-opt"
 
