@@ -1,19 +1,44 @@
+# Fixed ManiSkill3 Configuration
 task: maniskill3
 obs: state  
-
-checkpoint: /root/td-mpc-opt/tdmpc2/models/models--oleksandr-severhin--td-mpc-opt/snapshots/d152d673a316319defb2484794c8b03a20f9d261/mt30_1M_steps_50_decrease_final.pt
+checkpoint: tdmpc2/models/models--oleksandr-severhin--td-mpc-opt/snapshots/befbc68dcc71c956ca6b86951b84d0d919b61440/mt30_1M_steps_50_cosine_decay_final.pt
 eval_episodes: 10
 eval_freq: ???
 
 # Multi-task evaluation settings
 multi_task_eval: true  
-eval_all_tasks: true   
+eval_all_tasks: true  
 continue_on_failure: true  
 save_individual_results: true  
-parallel_eval: false 
+parallel_eval: false
 
-# training
-steps: 25_000 # 50_000. 100_000, 200_000, 337_000, 1_000_000
+# Core multi-task settings (MOVED TO TOP LEVEL - this was the main issue)
+multitask: true
+tasks:
+  - "PickCube-v1"          
+  - "StackCube-v1"        
+  - "PegInsertionSide-v1"  
+  - "PushCube-v1"        
+  - "PullCube-v1"        
+  - "PlaceSphere-v1"      
+  - "LiftPegUpright-v1"  
+  - "PlugCharger-v1"      
+  - "PickSingleYCB-v1"  
+  - "RollBall-v1"        
+  - "PokeCube-v1"      
+  - "PullCubeTool-v1"      
+  - "AssemblingKits-v1"    
+  - "PushT-v1"            
+  - "TwoRobotPickCube-v1"
+  - "TwoRobotStackCube-v1"
+  - "PickCubeSO100-v1"    
+  - "PickCubeWidowXAI-v1"  
+  - "TurnFaucet-v1"        
+  - "OpenCabinetDoor-v1"  
+  - "OpenCabinetDrawer-v1"
+
+# Training settings
+steps: 25_000 # 50_000, 100_000, 200_000, 337_000, 1_000_000
 batch_size: 256
 reward_coef: 0.1
 value_coef: 0.1
@@ -30,12 +55,12 @@ buffer_size: 500_000 # 1_000_000
 exp_name: maniskill3_multitask_eval
 data_dir: /root/td-mpc-opt/data/maniskill3
 
-# distillation
+# Distillation settings
 distillation:
   schedule: "cosine_decay"
   d_coef: 0.4
 
-# planning
+# Planning settings
 mpc: true
 iterations: 6
 num_samples: 512
@@ -46,21 +71,21 @@ min_std: 0.05
 max_std: 2
 temperature: 0.5
 
-# actor
+# Actor settings
 log_std_min: -10
 log_std_max: 2
 entropy_coef: 1e-4
 
-# critic
+# Critic settings
 num_bins: 101
 vmin: -10
 vmax: +10
 
-# distillation
+# Distillation parameters
 distillation_temperature: 2.0
 distillation_weight: 0.5
 
-# architecture
+# Architecture settings
 model_size: 1
 num_enc_layers: 2
 enc_dim: 256
@@ -74,81 +99,6 @@ simnorm_dim: 8
 
 # ManiSkill 3 Multi-Task Configuration
 maniskill3:
-  task_groups:
-    mt30_heritage:
-      - "PickCube-v1"          
-      - "StackCube-v1"        
-      - "PegInsertionSide-v1"
-      
-    fundamental_manipulation:
-      - "PushCube-v1"        
-      - "PullCube-v1"        
-      - "PlaceSphere-v1"      
-      - "LiftPegUpright-v1"  
-      - "PlugCharger-v1"      
-      - "PickSingleYCB-v1"  
-      - "RollBall-v1"        
-      - "PokeCube-v1"
-      
-    precision_tasks:
-      - "PullCubeTool-v1"      
-      - "AssemblingKits-v1"    
-      - "PushT-v1"
-      
-    multi_robot:
-      - "TwoRobotPickCube-v1"
-      - "TwoRobotStackCube-v1"
-      
-    robot_variants:
-      - "PickCubeSO100-v1"    
-      - "PickCubeWidowXAI-v1"
-      
-    articulated_objects:
-      - "TurnFaucet-v1"        
-      - "OpenCabinetDoor-v1"  
-      - "OpenCabinetDrawer-v1"
-  
-  # Flattened list of all tasks for evaluation (auto-generated from groups)
-  all_tasks:
-    - "PickCube-v1"          
-    - "StackCube-v1"        
-    - "PegInsertionSide-v1"  
-    - "PushCube-v1"        
-    - "PullCube-v1"        
-    - "PlaceSphere-v1"      
-    - "LiftPegUpright-v1"  
-    - "PlugCharger-v1"      
-    - "PickSingleYCB-v1"  
-    - "RollBall-v1"        
-    - "PokeCube-v1"      
-    - "PullCubeTool-v1"      
-    - "AssemblingKits-v1"    
-    - "PushT-v1"            
-    - "TwoRobotPickCube-v1"
-    - "TwoRobotStackCube-v1"
-    - "PickCubeSO100-v1"    
-    - "PickCubeWidowXAI-v1"  
-    - "TurnFaucet-v1"        
-    - "OpenCabinetDoor-v1"  
-    - "OpenCabinetDrawer-v1"
-    
-  # Task-specific configurations (optional overrides)
-  task_configs:
-    "PlugCharger-v1":
-      max_episode_steps: 200
-      eval_episodes: 5  
-    "AssemblingKits-v1":
-      max_episode_steps: 200
-      eval_episodes: 5
-    "PushT-v1":
-      max_episode_steps: 100
-    "TwoRobotPickCube-v1":
-      max_episode_steps: 100
-      eval_episodes: 5  
-    "TwoRobotStackCube-v1":
-      max_episode_steps: 100
-      eval_episodes: 5
-
   # Environment configuration
   env_kwargs:
     obs_mode: "state"  
@@ -158,7 +108,7 @@ maniskill3:
     control_freq: 20
     max_episode_steps: 50  
     
-  # Observation space settings (will be populated automatically)
+  # Observation space settings
   obs_space_type: "dict"
   
   # Action space settings
@@ -170,7 +120,7 @@ maniskill3:
     
   # GPU settings for ManiSkill 3
   sim_backend: "gpu"  
-  num_envs: 1  # Number of parallel environments (increase for faster evaluation)
+  num_envs: 1  # Number of parallel environments
   
   # Results and logging settings for multi-task evaluation
   results_dir: "./results/maniskill3_multitask"
@@ -179,7 +129,7 @@ maniskill3:
   save_videos: true  # Save videos for successful episodes
   video_dir: "./videos/maniskill3_eval"
 
-# logging
+# Logging settings
 wandb_project: td-mpc-maniskill3
 wandb_entity: ???
 wandb_silent: false
@@ -192,7 +142,7 @@ wandb_multitask:
   group_name: "maniskill3_multitask_eval"  # Group all runs together
   job_type: "evaluation"
 
-# misc
+# Miscellaneous settings
 save_video: true  
 save_agent: true
 seed: 1
@@ -200,10 +150,8 @@ seed: 1
 # Multi-task evaluation specific settings
 work_dir: "./results/maniskill3_multitask"
 task_title: "ManiSkill3 Multi-Task Evaluation"
-multitask: true 
 
-# Auto-populated fields (leave as ???, will be filled by evaluation script)
-tasks: ???  
+# Auto-populated fields (these will be filled by the evaluation script)
 obs_shape: ???
 action_dim: ???
 episode_length: ???

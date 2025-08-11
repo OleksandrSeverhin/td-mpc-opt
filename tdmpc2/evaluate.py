@@ -24,8 +24,8 @@ torch.backends.cudnn.benchmark = True
 def format_time(seconds):
     return str(timedelta(seconds=int(seconds)))
 
-@hydra.main(config_name='config_mt30', config_path='./student_config')
-#@hydra.main(config_name='config_maniskill3', config_path='./student_config')
+#@hydra.main(config_name='config_mt30', config_path='./student_config')
+@hydra.main(config_name='config_maniskill3', config_path='./student_config')
 def evaluate(cfg: dict):
 	"""
 	Script for evaluating a single-task / multi-task TD-MPC2 checkpoint.
@@ -65,7 +65,6 @@ def evaluate(cfg: dict):
 	if not cfg.multitask and ('mt80' in cfg.checkpoint or 'mt30' in cfg.checkpoint):
 		print(colored('Warning: single-task evaluation of multi-task models is not currently supported.', 'red', attrs=['bold']))
 		print(colored('To evaluate a multi-task model, use task=mt80 or task=mt30.', 'red', attrs=['bold']))
-
 
 	# Make environment
 	env = make_env(cfg)
