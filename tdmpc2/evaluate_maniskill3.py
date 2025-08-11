@@ -50,7 +50,7 @@ def create_maniskill_env(task_name: str, cfg):
         env = gym.make(task_name, **env_kwargs)
         return env
     except Exception as e:
-        print(colored(f"❌ Failed to create environment {task_name}: {str(e)}", 'red'))
+        print(colored(f"Failed to create environment {task_name}: {str(e)}", 'red'))
         raise
 
 def evaluate_maniskill_task(agent, task_name: str, cfg) -> dict:

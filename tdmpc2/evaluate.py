@@ -24,8 +24,7 @@ torch.backends.cudnn.benchmark = True
 def format_time(seconds):
     return str(timedelta(seconds=int(seconds)))
 
-#@hydra.main(config_name='config_mt30', config_path='./student_config')
-@hydra.main(config_name='config_maniskill3', config_path='./student_config')
+@hydra.main(config_name='config_mt30', config_path='./student_config')
 def evaluate(cfg: dict):
 	"""
 	Script for evaluating a single-task / multi-task TD-MPC2 checkpoint.
