@@ -65,6 +65,7 @@ def evaluate(cfg: dict):
 		print(colored('Warning: single-task evaluation of multi-task models is not currently supported.', 'red', attrs=['bold']))
 		print(colored('To evaluate a multi-task model, use task=mt80 or task=mt30.', 'red', attrs=['bold']))
 
+
 	# Make environment
 	env = make_env(cfg)
 

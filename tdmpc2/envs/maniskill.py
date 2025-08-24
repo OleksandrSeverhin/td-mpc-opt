@@ -1,79 +1,56 @@
 import gym
 import numpy as np
-from envs.wrappers.time_limit import TimeLimit
+from mani_skill.utils.wrappers import ManiSkillWrapper, ContinuousTaskWrapper
+import mani_skill.envs as ms_envs
+from mani_skill.utils.wrappers import RecordEpisode
+from mani_skill.envs import make as make_ms_env
 
-import mani_skill2.envs
+# This wrapper simplifies the observation space and action space for TD-MPC
+# It handles the multi-step control frequency to align with the agent's control loop.
+class TDMPCWrapper(gym.Wrapper):
+    def __init__(self, env, obs_mode, control_mode):
+        super().__init__(env)
+        self.env = env
+        self.observation_space = self.env.observation_space[obs_mode]
+        self.action_space = self.env.action_space[control_mode]
+        
+    def reset(self, **kwargs):
+        # The ManiSkill reset returns a dictionary of observations. We extract the 'state' obs.
+        obs, info = self.env.reset(**kwargs)
+        return obs, info
+    
+    def step(self, action):
+        # ManiSkill step returns a dictionary of observations. We extract the 'state' obs.
+        obs_dict, reward, terminated, truncated, info = self.env.step(action)
+        return obs_dict, reward, terminated, truncated, info
 
+def make_env(env_id, obs_mode="state", control_mode="pd_ee_delta_pose", record_dir=None, render_mode="rgb_array"):
+    """
+    This function creates a ManiSkill3 environment with the specified configuration.
+    It is designed to be called by your main training or evaluation scripts.
 
-MANISKILL_TASKS = {
-	'lift-cube': dict(
-		env='LiftCube-v0',
-		control_mode='pd_ee_delta_pos',
-	),
-	'pick-cube': dict(
-		env='PickCube-v0',
-		control_mode='pd_ee_delta_pos',
-	),
-	'stack-cube': dict(
-		env='StackCube-v0',
-		control_mode='pd_ee_delta_pos',
-	),
-	'pick-ycb': dict(
-		env='PickSingleYCB-v0',
-		control_mode='pd_ee_delta_pose',
-	),
-	'turn-faucet': dict(
-		env='TurnFaucet-v0',
-		control_mode='pd_ee_delta_pose',
-	),
-}
-
-
-class ManiSkillWrapper(gym.Wrapper):
-	def __init__(self, env, cfg):
-		super().__init__(env)
-		self.env = env
-		self.cfg = cfg
-		self.observation_space = self.env.observation_space
-		self.action_space = gym.spaces.Box(
-			low=np.full(self.env.action_space.shape, self.env.action_space.low.min()),
-			high=np.full(self.env.action_space.shape, self.env.action_space.high.max()),
-			dtype=self.env.action_space.dtype,
-		)
-
-	def reset(self):
-		return self.env.reset()
-	
-	def step(self, action):
-		reward = 0
-		for _ in range(2):
-			obs, r, _, info = self.env.step(action)
-			reward += r
-		return obs, reward, False, info
-
-	@property
-	def unwrapped(self):
-		return self.env.unwrapped
-
-	def render(self, args, **kwargs):
-		return self.env.render(mode='cameras')
-
-
-def make_env(cfg):
-	"""
-	Make ManiSkill2 environment.
-	"""
-	if cfg.task not in MANISKILL_TASKS:
-		raise ValueError('Unknown task:', cfg.task)
-	assert cfg.obs == 'state', 'This task only supports state observations.'
-	task_cfg = MANISKILL_TASKS[cfg.task]
-	env = gym.make(
-		task_cfg['env'],
-		obs_mode='state',
-		control_mode=task_cfg['control_mode'],
-		render_camera_cfgs=dict(width=384, height=384),
-	)
-	env = ManiSkillWrapper(env, cfg)
-	env = TimeLimit(env, max_episode_steps=100)
-	env.max_episode_steps = env._max_episode_steps
-	return env
+    Args:
+        env_id (str): The name of the ManiSkill3 task (e.g., "PickCube-v1").
+        obs_mode (str): The observation mode. 'state' is used for latent space models.
+        control_mode (str): The robot control mode.
+        record_dir (str): Directory to save recorded episodes.
+        render_mode (str): Rendering mode for the environment.
+    """
+    
+    # 1. Create the base ManiSkill3 environment
+    env = make_ms_env(
+        env_id,
+        obs_mode=obs_mode,
+        control_mode=control_mode,
+        render_mode=render_mode,
+    )
+    
+    # 2. Wrap the environment with the TDMPCWrapper to simplify spaces
+    env = TDMPCWrapper(env, obs_mode, control_mode)
+    
+    # 3. Add a wrapper to record episodes, if a directory is provided
+    if record_dir is not None:
+        print(f"Recording episodes to {record_dir}")
+        env = RecordEpisode(env, record_dir)
+        
+    return env
