@@ -15,7 +15,7 @@ from tqdm import tqdm
 
 from common.parser import parse_cfg
 from common.seed import set_seed
-from envs import make_env
+from envs import make_env, make_multitask_env
 from omegaconf import OmegaConf
 from tdmpc2 import TDMPC2
 
@@ -66,9 +66,9 @@ def evaluate(cfg: dict):
 		print(colored('Warning: single-task evaluation of multi-task models is not currently supported.', 'red', attrs=['bold']))
 		print(colored('To evaluate a multi-task model, use task=mt80 or task=mt30.', 'red', attrs=['bold']))
 
-
 	# Make environment
-	env = make_env(cfg)
+	# env = make_env(cfg)
+	env = make_multitask_env(cfg)
 
 	# Load agent
 	agent = TDMPC2(cfg)
