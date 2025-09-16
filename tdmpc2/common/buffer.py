@@ -14,7 +14,6 @@ class Buffer():
 		self.cfg = cfg
 		self._device = torch.device('cuda')
 		self._capacity = min(cfg.buffer_size, cfg.steps)
-		print(f'CAPACITY: {self._capacity}')
 		self._sampler = SliceSampler(
 			num_slices=self.cfg.batch_size,
 			end_key=None,
@@ -43,12 +42,9 @@ class Buffer():
 			storage=storage,
 			sampler=self._sampler,
 			pin_memory=True,
-			prefetch=1,
+			prefetch=int(self.cfg.num_envs / self.cfg.steps_per_update),
 			batch_size=self._batch_size,
 		)
-  
-	def is_empty(self):
-		return self._buffer is None or len(self._buffer) == 0
 
 	def _init(self, tds):
 		"""Initialize the replay buffer. Use the first episode to estimate storage requirements."""
@@ -62,7 +58,7 @@ class Buffer():
 		total_bytes = bytes_per_step*self._capacity
 		print(f'Storage required: {total_bytes/1e9:.2f} GB')
 		# Heuristic: decide whether to use CUDA or CPU memory
-		storage_device = 'cuda' if 1.1*total_bytes < mem_free else 'cpu'
+		storage_device = 'cuda' if 2.5*total_bytes < mem_free else 'cpu'
 		print(f'Using {storage_device.upper()} memory for storage.')
 		return self._reserve_buffer(
 			LazyTensorStorage(self._capacity, device=torch.device(storage_device))
@@ -86,12 +82,17 @@ class Buffer():
 		return self._to_device(obs, action, reward, task)
 
 	def add(self, td):
-		"""Add an episode to the buffer."""
-		td['episode'] = torch.ones_like(td['reward'], dtype=torch.int64) * self._num_eps
-		if self._num_eps == 0:
-			self._buffer = self._init(td)
-		self._buffer.extend(td)
-		self._num_eps += 1
+		"""Add an episode to the buffer. 
+		Before vec: td[episode_len+1, ..] ..=act_dim, obs_dim, None
+		After: add num_env to the batch dimension
+		Note: for official vec code @51d6b8d, it seems to have batch dimension [episode_len+1, num_env]"""
+
+		for _td in td:
+			_td['episode'] = torch.ones_like(_td['reward'], dtype=torch.int64) * self._num_eps
+			if self._num_eps == 0:
+				self._buffer = self._init(_td)
+			self._buffer.extend(_td)
+			self._num_eps += 1
 		return self._num_eps
 
 	def sample(self):
