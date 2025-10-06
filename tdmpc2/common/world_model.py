@@ -3,7 +3,7 @@ from copy import deepcopy
 import numpy as np
 import torch
 import torch.nn as nn
-
+from tensordict.tensordict import TensorDict
 from common import layers, math, init
 
 
@@ -22,10 +22,15 @@ class WorldModel(nn.Module):
 			for i in range(len(cfg.tasks)):
 				self._action_masks[i, :cfg.action_dims[i]] = 1.
 		self._encoder = layers.enc(cfg)
-		self._dynamics = layers.mlp(cfg.latent_dim + cfg.action_dim + cfg.task_dim, 2*[cfg.mlp_dim], cfg.latent_dim, act=layers.SimNorm(cfg))
-		self._reward = layers.mlp(cfg.latent_dim + cfg.action_dim + cfg.task_dim, 2*[cfg.mlp_dim], max(cfg.num_bins, 1))
-		self._pi = layers.mlp(cfg.latent_dim + cfg.task_dim, 2*[cfg.mlp_dim], 2*cfg.action_dim)
-		self._Qs = layers.Ensemble([layers.mlp(cfg.latent_dim + cfg.action_dim + cfg.task_dim, 2*[cfg.mlp_dim], max(cfg.num_bins, 1), dropout=cfg.dropout) for _ in range(cfg.num_q)])
+		cfg.true_latent_dim = cfg.latent_dim
+		if 'rgb-state' in self._encoder: # 
+			cfg.true_latent_dim += cfg.rgb_state_latent_dim
+		
+		self._dynamics = layers.mlp(cfg.true_latent_dim + cfg.action_dim + cfg.task_dim, 2*[cfg.mlp_dim], cfg.true_latent_dim, act=layers.SimNorm(cfg))
+		self._reward = layers.mlp(cfg.true_latent_dim + cfg.action_dim + cfg.task_dim, 2*[cfg.mlp_dim], max(cfg.num_bins, 1))
+		self._pi = layers.mlp(cfg.true_latent_dim + cfg.task_dim, 2*[cfg.mlp_dim], 2*cfg.action_dim)
+		self._Qs = layers.Ensemble([layers.mlp(cfg.true_latent_dim + cfg.action_dim + cfg.task_dim, 2*[cfg.mlp_dim], 
+										 	   max(cfg.num_bins, 1), dropout=cfg.dropout) for _ in range(cfg.num_q)])
 		self.apply(init.weight_init)
 		init.zero_([self._reward[-1].weight, self._Qs.params[-2]])
 		self._target_Qs = deepcopy(self._Qs).requires_grad_(False)
@@ -92,17 +97,26 @@ class WorldModel(nn.Module):
 
 	def encode(self, obs, task):
 		"""
-		Encodes an observation into its latent representation.
-		This implementation assumes a single state-based observation.
+		Encodes an observation into its latent representation. Online trainer obs is [1, obs_shape], task is None
+		This implementation assumes a single state-based observation. Should be already batched.
+		Should be ok.
 		"""
 		if self.cfg.multitask:
 			obs = self.task_emb(obs, task)
-		if self.cfg.obs == 'rgb' and obs.ndim == 5:
+		if self.cfg.obs == 'rgb' and not self.cfg.include_state and obs.ndim == 5:
 			return torch.stack([self._encoder[self.cfg.obs](o) for o in obs])
+		elif self.cfg.obs == 'rgb' and self.cfg.include_state and isinstance(obs, dict):
+			return torch.cat([self._encoder[k](o) for k, o in obs.items()], dim=1)
+		elif self.cfg.obs == 'rgb' and self.cfg.include_state and isinstance(obs, TensorDict): # Iterate through buffer batch for update
+			if obs.ndim == 2: # ndim=6 for rgb but ndim=2 here bc it's diffeerent with TensorDict
+				return torch.stack([torch.cat([self._encoder[k](o) for k, o in os.items()], dim=1) for os in obs])
+			else: # ndim=5 for rgb
+				return torch.cat([self._encoder[k](o) for k, o in obs.items()], dim=1)
 		return self._encoder[self.cfg.obs](obs)
 
 	def next(self, z, a, task):
 		"""
+		z[]
 		Predicts the next latent state given the current latent state and action.
 		"""
 		if self.cfg.multitask:
@@ -121,6 +135,9 @@ class WorldModel(nn.Module):
 
 	def pi(self, z, task):
 		"""
+		z[~, 1]
+		Return  mu[~, action_dim], pi[~, action_dim], log_pi[~, 1], log_std[~, action_dim]
+
 		Samples an action from the policy prior.
 		The policy prior is a Gaussian distribution with
 		mean and (log) std predicted by a neural network.
@@ -147,32 +164,9 @@ class WorldModel(nn.Module):
 
 		return mu, pi, log_pi, log_std
 
-	# QR-DQN
-	# def Q(self, z, a, task, return_type='min', target=False):
-	# 	"""
-	# 	Predict state-action value distribution using QR-DQN.
-	# 	"""
-	# 	assert return_type in {'min', 'avg', 'all'}
-
-	# 	if self.cfg.multitask:
-	# 		z = self.task_emb(z, task)
-			
-	# 	z = torch.cat([z, a], dim=-1)
-	# 	out = (self._target_Qs if target else self._Qs)(z)  # Shape: (num_q, batch_size, num_quantiles)
-
-	# 	if return_type == 'all':
-	# 		return out
-
-	# 	Q1, Q2 = out[np.random.choice(self.cfg.num_q, 2, replace=False)]
-	# 	if return_type == 'min':
-	# 		return torch.min(Q1, Q2)
-	# 	else:
-	# 		return (Q1 + Q2) / 2
-
-
 	def Q(self, z, a, task, return_type='min', target=False):
 		"""
-		Predict state-action value.
+		Predict state-action value. z[~, latent_dim], a[~, action_dim] -> [num_q, ~, num_bins] if all else [~, 1]
 		`return_type` can be one of [`min`, `avg`, `all`]:
 			- `min`: return the minimum of two randomly subsampled Q-values.
 			- `avg`: return the average of two randomly subsampled Q-values.

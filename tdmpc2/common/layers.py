@@ -6,7 +6,7 @@ from functorch import combine_state_for_ensemble
 
 class Ensemble(nn.Module):
 	"""
-	Vectorized ensemble of modules.
+	Vectorized ensemble of modules. It seems adding 1 extra dimens
 	"""
 
 	def __init__(self, modules, **kwargs):
@@ -26,7 +26,7 @@ class Ensemble(nn.Module):
 
 class ShiftAug(nn.Module):
 	"""
-	Random shift image augmentation.
+	Random shift image augmentation. (N, C, H, W) as input.
 	Adapted from https://github.com/facebookresearch/drqv2
 	"""
 	def __init__(self, pad=3):
@@ -52,7 +52,7 @@ class ShiftAug(nn.Module):
 
 class PixelPreprocess(nn.Module):
 	"""
-	Normalizes pixel observations to [-0.5, 0.5].
+	Normalizes pixel observations to [-0.5, 0.5]. Always work.
 	"""
 
 	def __init__(self):
@@ -64,7 +64,7 @@ class PixelPreprocess(nn.Module):
 
 class SimNorm(nn.Module):
 	"""
-	Simplicial normalization.
+	Simplicial normalization. Same shape, don't care batch.
 	Adapted from https://arxiv.org/abs/2204.00616.
 	"""
 	
@@ -84,7 +84,7 @@ class SimNorm(nn.Module):
 
 class NormedLinear(nn.Linear):
 	"""
-	Linear layer with LayerNorm, activation, and optionally dropout.
+	Linear layer with LayerNorm, activation, and optionally dropout. Don't care batch
 	"""
 
 	def __init__(self, *args, dropout=0., act=nn.Mish(inplace=True), **kwargs):
@@ -127,13 +127,22 @@ def conv(in_shape, num_channels, act=None):
 	Basic convolutional encoder for TD-MPC2 with raw image observations.
 	4 layers of convolution with ReLU activations, followed by a linear layer.
 	"""
-	assert in_shape[-1] == 64 # assumes rgb observations to be 64x64
-	layers = [
-		ShiftAug(), PixelPreprocess(),
-		nn.Conv2d(in_shape[0], num_channels, 7, stride=2), nn.ReLU(inplace=True),
-		nn.Conv2d(num_channels, num_channels, 5, stride=2), nn.ReLU(inplace=True),
-		nn.Conv2d(num_channels, num_channels, 3, stride=2), nn.ReLU(inplace=True),
-		nn.Conv2d(num_channels, num_channels, 3, stride=1), nn.Flatten()]
+	assert in_shape[-1] == 64 or in_shape[-1] == 128 # assumes rgb observations to be either 64x64 or 128x128
+	if in_shape[-1] == 64:
+		layers = [
+			ShiftAug(), PixelPreprocess(),
+			nn.Conv2d(in_shape[0], num_channels, 7, stride=2), nn.ReLU(inplace=True),
+			nn.Conv2d(num_channels, num_channels, 5, stride=2), nn.ReLU(inplace=True),
+			nn.Conv2d(num_channels, num_channels, 3, stride=2), nn.ReLU(inplace=True),
+			nn.Conv2d(num_channels, num_channels, 3, stride=1), nn.Flatten()]
+	elif in_shape[-1] == 128:
+		layers = [
+			ShiftAug(), PixelPreprocess(),
+			nn.Conv2d(in_shape[0], num_channels, 7, stride=2), nn.ReLU(inplace=True),
+			nn.Conv2d(num_channels, num_channels, 5, stride=2), nn.ReLU(inplace=True),
+			nn.Conv2d(num_channels, num_channels, 3, stride=2), nn.ReLU(inplace=True),
+			nn.Conv2d(num_channels, num_channels, 3, stride=2), nn.ReLU(inplace=True),
+			nn.Conv2d(num_channels, num_channels, 3, stride=1), nn.Flatten()]
 	if act:
 		layers.append(act)
 	return nn.Sequential(*layers)
@@ -148,6 +157,8 @@ def enc(cfg, out={}):
 			out[k] = mlp(cfg.obs_shape[k][0] + cfg.task_dim, max(cfg.num_enc_layers-1, 1)*[cfg.enc_dim], cfg.latent_dim, act=SimNorm(cfg))
 		elif k == 'rgb':
 			out[k] = conv(cfg.obs_shape[k], cfg.num_channels, act=SimNorm(cfg))
+		elif k == 'rgb-state':
+			out[k] = mlp(cfg.obs_shape[k][0] + cfg.task_dim, (cfg.rgb_state_num_enc_layers-1)*[cfg.rgb_state_enc_dim], cfg.rgb_state_latent_dim, act=SimNorm(cfg))
 		else:
 			raise NotImplementedError(f"Encoder for observation type {k} not implemented.")
 	return nn.ModuleDict(out)

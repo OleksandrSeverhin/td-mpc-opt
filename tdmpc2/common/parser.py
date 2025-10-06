@@ -35,8 +35,7 @@ def parse_cfg(cfg: OmegaConf) -> OmegaConf:
 			pass
 
 	# Convenience
-	cfg.work_dir = Path(hydra.utils.get_original_cwd()) / 'logs' / cfg.task / str(cfg.seed) / cfg.exp_name
-	cfg.task_title = cfg.task.replace("-", " ").title()
+	cfg.work_dir = Path(hydra.utils.get_original_cwd()) / 'logs' / cfg.env_id / str(cfg.seed) / cfg.exp_name
 	cfg.bin_size = (cfg.vmax - cfg.vmin) / (cfg.num_bins-1) # Bin size for discrete regression
 
 	# Model size
@@ -45,17 +44,30 @@ def parse_cfg(cfg: OmegaConf) -> OmegaConf:
 			f'Invalid model size {cfg.model_size}. Must be one of {list(MODEL_SIZE.keys())}'
 		for k, v in MODEL_SIZE[cfg.model_size].items():
 			cfg[k] = v
-		if cfg.task == 'mt30' and cfg.model_size == 19:
-			cfg.latent_dim = 512 # This checkpoint is slightly smaller
 
 	# Multi-task
-	cfg.multitask = cfg.task in TASK_SET.keys()
+	cfg.multitask = cfg.env_id in TASK_SET.keys()
 	if cfg.multitask:
-		cfg.task_title = cfg.task.upper()
 		# Account for slight inconsistency in task_dim for the mt30 experiments
-		cfg.task_dim = 96 if cfg.task == 'mt80' or cfg.model_size in {1, 317} else 64
+		cfg.task_dim = 96 if cfg.env_id == 'mt80' or cfg.model_size in {1, 317} else 64
 	else:
 		cfg.task_dim = 0
-	cfg.tasks = TASK_SET.get(cfg.task, [cfg.task])
+	cfg.tasks = TASK_SET.get(cfg.env_id, [cfg.env_id])
+
+
+
+	# Maniskill
+	cfg.env_cfg.env_id = cfg.eval_env_cfg.env_id = cfg.env_id
+	cfg.env_cfg.obs_mode = cfg.eval_env_cfg.obs_mode = cfg.obs # state or rgb
+	cfg.env_cfg.reward_mode = cfg.eval_env_cfg.reward_mode = 'normalized_dense'
+	cfg.env_cfg.num_envs = cfg.num_envs
+	cfg.eval_env_cfg.num_envs = cfg.num_eval_envs
+	cfg.env_cfg.sim_backend = cfg.eval_env_cfg.sim_backend = cfg.env_type
+	
+	cfg.eval_env_cfg.num_eval_episodes = cfg.eval_episodes_per_env * cfg.num_eval_envs
+		
+	# cfg.(eval_)env_cfg.control_mode is defined in maniskill.py
+	# cfg.(eval_)env_cfg.env_horizon is defined in maniskill.py
+	# cfg.discount is defined in tdmpc2.py
 
 	return cfg
