@@ -1,13 +1,25 @@
-task: maniskill3
-obs: state
+defaults:
+    - override hydra/launcher: submitit_local
+
+# environment
+env_id: PushCube-v1 # Placeholder: Set to the specific task you are evaluating
+obs: state 
+control_mode: default 
+num_envs: 32
+num_eval_envs: 4
+env_type: gpu 
+include_state: true 
+render_mode: rgb_array 
+render_size: 64
 
 # evaluation
 checkpoint: /root/td-mpc-opt/tdmpc2/models/mt30-317M.pt
-eval_episodes: 10
+eval_episodes_per_env: 2 # Total 8 episodes (2 * 4 envs)
 eval_freq: 50000
+eval_reconfiguration_frequency: 1
 
 # training
-steps: 100_000
+steps: 100_000         # Kept at 100k for MT30 comparability
 batch_size: 256
 reward_coef: 0.1
 value_coef: 0.1
@@ -20,9 +32,10 @@ tau: 0.01
 discount_denom: 5
 discount_min: 0.95
 discount_max: 0.995
-buffer_size: 60000
-exp_name: "multi_distill_317M"
-data_dir: root/td-mpc-opt/data/maniskill3/
+buffer_size: 60000     # Kept at 60k for MT30 comparability
+exp_name: "single_eval_317M"
+data_dir: /root/td-mpc-opt/data/mt30
+steps_per_update: 1
 
 # planning
 mpc: true
@@ -45,61 +58,50 @@ num_bins: 101
 vmin: -10
 vmax: +10
 
-# architecture
+# architecture (Identical to 317M MT30 setup)
 model_size: 317
 num_enc_layers: 5
 enc_dim: 4096
 num_channels: 32
 mlp_dim: 4096
 latent_dim: 1376
-task_dim: 96
+[cite_start]task_dim: 96           # Kept at 96 to match the checkpoint's input layer 
 num_q: 8
 dropout: 0.01
 simnorm_dim: 8
 
 # logging
-wandb_project: ???
+wandb_project: "maniskill3_eval"
 wandb_entity: ???
 wandb_silent: false
 disable_wandb: false
 save_csv: true
 
 # misc
-save_video: false
+save_video_local: false 
 save_agent: true
 seed: 1
 
 # convenience
 work_dir: ???
 task_title: ???
-multitask: true
-tasks:
-  - "PickCube-v1"
-  - "StackCube-v1"
-  - "PegInsertionSide-v1"
-  - "PushCube-v1"
-  - "PullCube-v1"
-  - "PlaceSphere-v1"
-  - "LiftPegUpright-v1"
-  - "PlugCharger-v1"
-  - "PickSingleYCB-v1"
-  - "RollBall-v1"
-  - "PokeCube-v1"
-  - "PullCubeTool-v1"
-  - "AssemblingKits-v1"
-  - "PushT-v1"
-  - "TwoRobotPickCube-v1"
-  - "TwoRobotStackCube-v1"
-  - "PickCubeSO100-v1"
-  - "PickCubeWidowXAI-v1"
-  - "TurnFaucet-v1"
-  - "OpenCabinetDoor-v1"
-  - "OpenCabinetDrawer-v1"
+multitask: false       # Set to false for single-task run
+tasks: ["PushCube-v1"] # Single task list
 obs_shape: ???
 action_dim: ???
 episode_length: ???
-obs_shapes: ???
-action_dims: ???
-episode_lengths: ???
 seed_steps: ???
-bin_size: ???
+
+# ManiSkill RL Baselines Blocks
+env_cfg:
+    env_id: ${env_id}
+    control_mode: ${control_mode}
+    obs_mode: ${obs}
+    num_envs: ${num_envs}
+    sim_backend: ${env_type}
+eval_env_cfg:
+    env_id: ${env_id}
+    control_mode: ${control_mode}
+    obs_mode: ${obs}
+    num_envs: ${num_eval_envs}
+    sim_backend: ${env_type}
