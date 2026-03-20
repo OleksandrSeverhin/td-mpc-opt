@@ -186,7 +186,16 @@ class TDMPC2:
             
             teacher_z = None
             if self.teacher is not None:
-                teacher_z = self.teacher.model.encode(obs[0], task)
+                # FIX: Slice ManiSkill3 obs (128) to match Teacher MT30 obs (120)
+                # ManiSkill3 state: obs[0]['state'] or obs[0] if flat
+                if isinstance(obs[0], dict):
+                    t_obs = {k: v[:, :120] if k == 'state' else v for k, v in obs[0].items()}
+                else:
+                    t_obs = obs[0][:, :120]
+                
+                # Assume task 0 for the generalist teacher or map appropriately
+                t_task = torch.zeros_like(task) 
+                teacher_z = self.teacher.model.encode(t_obs, t_task)
 
         self.optim.zero_grad(set_to_none=True)
         self.model.train()
