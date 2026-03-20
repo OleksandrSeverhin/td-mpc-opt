@@ -3,10 +3,11 @@ import copy
 import torch
 import multiprocessing
 import hydra
-import gymnasium as gym  
+import gymnasium as gym
 from termcolor import colored
 from omegaconf import OmegaConf
 
+# Core TD-MPC2 - ManiSkill3 Imports
 from common.parser import parse_cfg
 from common.seed import set_seed
 from common.buffer import Buffer
@@ -21,35 +22,51 @@ torch.backends.cudnn.benchmark = True
 def train(cfg: dict):
     assert torch.cuda.is_available()
     
+    # 1. Preliminary Setup
     set_seed(cfg.seed)
     student_cfg = parse_cfg(cfg) 
 
+    # 2. Initialize Environment First
     print(colored('Initializing ManiSkill3 Environment...', 'yellow'))
     temp_env = make_envs(student_cfg, student_cfg.num_envs)
     
+    # Extract metadata and populate mandatory keys
     obs_space = temp_env.observation_space
     if isinstance(obs_space, gym.spaces.Dict):
         student_cfg.obs_shape = {k: v.shape for k, v in obs_space.spaces.items()}
     else:
         student_cfg.obs_shape = {student_cfg.obs: obs_space.shape}
         
+    # Populate action and episode dimensions
     student_cfg.action_dim = temp_env.action_space.shape[0]
+    student_cfg.action_dims = [student_cfg.action_dim] # Required for multi-task init
     student_cfg.episode_length = temp_env.max_episode_steps
+    student_cfg.episode_lengths = [student_cfg.episode_length] # Required for multi-task init
     
+    # 3. Setup Teacher Configuration (317M)
     print(colored('Preparing Teacher Configuration...', 'blue'))
     teacher_cfg = copy.deepcopy(student_cfg)
     
+    # Overrides for the generalist 317M checkpoint
     teacher_cfg.model_size = 317
     teacher_cfg.num_enc_layers = 5
     teacher_cfg.enc_dim = 4096
     teacher_cfg.mlp_dim = 4096
     teacher_cfg.latent_dim = 1376
-    teacher_cfg.task_dim = 96
+    teacher_cfg.task_dim = 96      
+    teacher_cfg.multitask = True   # The 317M checkpoint is a multitask model
+    teacher_cfg.num_q = 8          
     teacher_cfg.true_latent_dim = 1376 
     
+    # 4. Initialize Models
     print(colored('Loading Teacher (317M)...', 'blue', attrs=['bold']))
     teacher_model = TDMPC2(teacher_cfg)
-    teacher_model.load(student_cfg.checkpoint) 
+    
+    # Non-strict loading to allow distillation between different task sets
+    state_dict = torch.load(student_cfg.checkpoint, weights_only=False)
+    load_res = teacher_model.model.load_state_dict(state_dict["model"], strict=False)
+    print(colored(f'Teacher Load Status: {load_res}', 'magenta'))
+    
     teacher_model.model.eval()
     for p in teacher_model.model.parameters():
         p.requires_grad = False
@@ -57,6 +74,7 @@ def train(cfg: dict):
     print(colored(f'Initializing Student ({student_cfg.model_size}M)...', 'green'))
     agent = TDMPC2(student_cfg, teacher=teacher_model)
     
+    # 5. Infrastructure Setup
     print(colored('Work dir:', 'yellow', attrs=['bold']), student_cfg.work_dir)
     manager = multiprocessing.Manager()
     video_path = student_cfg.work_dir / 'eval_video'
@@ -68,6 +86,7 @@ def train(cfg: dict):
     
     print_run(student_cfg)
 
+    # 6. Run Online Distillation
     trainer = OnlineTrainer(
         cfg=student_cfg,
         env=temp_env,

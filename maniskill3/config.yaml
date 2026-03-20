@@ -86,7 +86,9 @@ tasks:
   - "PushCube-v1"
 obs_shape: ???
 action_dim: ???
+action_dims: ???        # Added for multitask architecture compatibility
 episode_length: ???
+episode_lengths: ???    # Added for multitask architecture compatibility
 seed_steps: ???
 bin_size: ???
 true_latent_dim: ???
