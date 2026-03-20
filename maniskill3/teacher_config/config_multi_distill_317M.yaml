@@ -1,8 +1,5 @@
-defaults:
-    - override hydra/launcher: submitit_local
-
 # environment
-env_id: PushCube-v1 # Placeholder: Set to the specific task you are evaluating
+env_id: PushCube-v1
 obs: state 
 control_mode: default 
 num_envs: 32
@@ -13,13 +10,13 @@ render_mode: rgb_array
 render_size: 64
 
 # evaluation
-checkpoint: /root/td-mpc-opt/tdmpc2/models/mt30-317M.pt
-eval_episodes_per_env: 2 # Total 8 episodes (2 * 4 envs)
+checkpoint: /root/td-mpc-opt/tdmpc2/models/multitask/mt30-317M.pt
+eval_episodes_per_env: 2 
 eval_freq: 50000
 eval_reconfiguration_frequency: 1
 
 # training
-steps: 100_000         # Kept at 100k for MT30 comparability
+steps: 100000 
 batch_size: 256
 reward_coef: 0.1
 value_coef: 0.1
@@ -32,8 +29,8 @@ tau: 0.01
 discount_denom: 5
 discount_min: 0.95
 discount_max: 0.995
-buffer_size: 60000     # Kept at 60k for MT30 comparability
-exp_name: "single_eval_317M"
+buffer_size: 60000 
+exp_name: "ms3_distill_317M"
 data_dir: /root/td-mpc-opt/data/mt30
 steps_per_update: 1
 
@@ -56,16 +53,16 @@ entropy_coef: 1e-4
 # critic
 num_bins: 101
 vmin: -10
-vmax: +10
+vmax: 10
 
-# architecture (Identical to 317M MT30 setup)
+# architecture
 model_size: 317
 num_enc_layers: 5
 enc_dim: 4096
 num_channels: 32
 mlp_dim: 4096
 latent_dim: 1376
-[cite_start]task_dim: 96           # Kept at 96 to match the checkpoint's input layer 
+task_dim: 96 
 num_q: 8
 dropout: 0.01
 simnorm_dim: 8
@@ -85,8 +82,9 @@ seed: 1
 # convenience
 work_dir: ???
 task_title: ???
-multitask: false       # Set to false for single-task run
-tasks: ["PushCube-v1"] # Single task list
+multitask: false 
+tasks:
+  - "PushCube-v1"
 obs_shape: ???
 action_dim: ???
 episode_length: ???
@@ -94,14 +92,14 @@ seed_steps: ???
 
 # ManiSkill RL Baselines Blocks
 env_cfg:
-    env_id: ${env_id}
-    control_mode: ${control_mode}
-    obs_mode: ${obs}
-    num_envs: ${num_envs}
-    sim_backend: ${env_type}
+  env_id: ${env_id}
+  control_mode: ${control_mode}
+  obs_mode: ${obs}
+  num_envs: ${num_envs}
+  sim_backend: ${env_type}
 eval_env_cfg:
-    env_id: ${env_id}
-    control_mode: ${control_mode}
-    obs_mode: ${obs}
-    num_envs: ${num_eval_envs}
-    sim_backend: ${env_type}
+  env_id: ${env_id}
+  control_mode: ${control_mode}
+  obs_mode: ${obs}
+  num_envs: ${num_eval_envs}
+  sim_backend: ${env_type}
