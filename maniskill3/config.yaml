@@ -1,117 +1,78 @@
-# environment
+# Environment
 env_id: PushCube-v1
 obs: state
-control_mode: default
-num_envs: 32
-num_eval_envs: 4
-env_type: gpu
-include_state: true
-render_mode: rgb_array
-render_size: 64
+modality: state
+action_dim: 8
+num_envs: 4
+num_eval_envs: 1
+steps: 1000000
 
-# evaluation
-checkpoint: /root/td-mpc-opt/tdmpc2/models/multitask/mt30-317M.pt
-eval_episodes_per_env: 2
-eval_freq: 50000
-eval_reconfiguration_frequency: 1
+# ManiSkill3 Specific Blocks
+env_cfg:
+  env_id: ${env_id}
+  num_envs: ${num_envs}
+eval_env_cfg:
+  env_id: ${env_id}
+  num_envs: ${num_eval_envs}
 
-# training
-steps: 100000
-batch_size: 256
+# Evaluation
+eval_freq: 25000
+eval_episodes: 10
+save_freq: 100000
+work_dir: logs
+exp_name: ms3_distill_1M
+render: false
+
+# Training
+[cite_start]batch_size: 256 # Optimal for multi-task knowledge distillation [cite: 149, 221]
+lr: 0.0003
+enc_lr_scale: 0.1
+grad_clip_norm: 20
+rho: 0.5
+entropy_coef: 0.0001
+consistency_coef: 20
 reward_coef: 0.1
 value_coef: 0.1
-consistency_coef: 20
-rho: 0.5
-lr: 0.0003
-enc_lr_scale: 0.3
-grad_clip_norm: 20
-tau: 0.01
-discount_denom: 5
-discount_min: 0.95
-discount_max: 0.995
-buffer_size: 1000000
-exp_name: "ms3_distill_1M"
-data_dir: /root/td-mpc-opt/data/mt30
-steps_per_update: 1
+[cite_start]distill_coef: 0.4 # Optimal weight for teacher guidance [cite: 118]
+seed: 1
 
-# architecture
+# Two-hot encoding
+vmax: 10
+vmin: -10
+num_bins: 101
+bin_size: 0.2
+
+# Model
 model_size: 1
+latent_dim: 128
 num_enc_layers: 2
 enc_dim: 256
 mlp_dim: 384
-latent_dim: 128
-task_dim: 0
 num_q: 2
-dropout: 0.01
-simnorm_dim: 8
+true_latent_dim: 128
 
-# planning
+# Planning
 mpc: true
-iterations: 6
+horizon: 5
 num_samples: 512
+iterations: 6
 num_elites: 64
 num_pi_trajs: 24
-horizon: 3
+temperature: 0.5
 min_std: 0.05
 max_std: 2
-temperature: 0.5
+discount_denom: 5
+discount_min: 0.95
+discount_max: 0.995
 
-# actor
-log_std_min: -10
-log_std_max: 2
-entropy_coef: 0.0001
-
-# critic
-num_bins: 101
-vmin: -10
-vmax: 10
-
-# logging
-wandb_project: "maniskill3_eval"
-wandb_entity: ???
-wandb_silent: false
-disable_wandb: false
-save_csv: true
-
-# misc
-save_video_local: false
-save_agent: true
-seed: 1
-
-# convenience
-work_dir: ???
-task_title: ???
+# Distillation
+checkpoint: /root/td-mpc-opt/tdmpc2/models/multitask/mt30-317M.pt
 multitask: false
-tasks:
-  - "PushCube-v1"
-obs_shape: ???
-action_dim: ???
-action_dims: ???        # Added for multitask architecture compatibility
-episode_length: ???
-episode_lengths: ???    # Added for multitask architecture compatibility
-seed_steps: ???
-bin_size: ???
-true_latent_dim: ???
-discount: ???
-distill_coef: 1.0
+task_dim: 96
 
-# ManiSkill RL Baselines Blocks
-env_cfg:
-  env_id: ${env_id}
-  control_mode: ${control_mode}
-  obs_mode: ${obs}
-  reward_mode: ???
-  num_envs: ${num_envs}
-  sim_backend: ${env_type}
-  partial_reset: false
-  env_horizon: ???
-eval_env_cfg:
-  env_id: ${env_id}
-  control_mode: ${control_mode}
-  obs_mode: ${obs}
-  reward_mode: ???
-  num_envs: ${num_eval_envs}
-  sim_backend: ${env_type}
-  partial_reset: false
-  env_horizon: ???
-  num_eval_episodes: ???
+# Infrastructure
+device: cuda
+save_csv: true
+wandb: false
+wandb_project: none
+wandb_entity: none
