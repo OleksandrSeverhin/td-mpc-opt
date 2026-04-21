@@ -1,21 +1,36 @@
-# Environment
 env_id: PushCube-v1
+env_type: gpu
+render_mode: null
+obs_mode: state
+control_mode: pd_ee_delta_pose
+render_size: 64
 obs: state
 modality: state
 action_dim: 8
 num_envs: 4
 num_eval_envs: 1
+eval_episodes_per_env: 10
+eval_reconfiguration_frequency: 1
 steps: 1000000
 
-# ManiSkill3 Specific Blocks
 env_cfg:
   env_id: ${env_id}
   num_envs: ${num_envs}
+  sim_backend: ${env_type}
+  render_mode: ${render_mode}
+  obs_mode: ${obs_mode}
+  control_mode: ${control_mode}
+  render_size: ${render_size}
+
 eval_env_cfg:
   env_id: ${env_id}
   num_envs: ${num_eval_envs}
+  sim_backend: ${env_type}
+  render_mode: ${render_mode}
+  obs_mode: ${obs_mode}
+  control_mode: ${control_mode}
+  render_size: ${render_size}
 
-# Evaluation
 eval_freq: 25000
 eval_episodes: 10
 save_freq: 100000
@@ -23,8 +38,9 @@ work_dir: logs
 exp_name: ms3_distill_1M
 render: false
 
-# Training
-[cite_start]batch_size: 256 # Optimal for multi-task knowledge distillation [cite: 149, 221]
+buffer_size: 1000000
+batch_size: 256
+steps_per_update: 1
 lr: 0.0003
 enc_lr_scale: 0.1
 grad_clip_norm: 20
@@ -33,16 +49,14 @@ entropy_coef: 0.0001
 consistency_coef: 20
 reward_coef: 0.1
 value_coef: 0.1
-[cite_start]distill_coef: 0.4 # Optimal weight for teacher guidance [cite: 118]
+distill_coef: 0.4
 seed: 1
 
-# Two-hot encoding
 vmax: 10
 vmin: -10
 num_bins: 101
 bin_size: 0.2
 
-# Model
 model_size: 1
 latent_dim: 128
 num_enc_layers: 2
@@ -50,8 +64,12 @@ enc_dim: 256
 mlp_dim: 384
 num_q: 2
 true_latent_dim: 128
+simnorm_dim: 8
+dropout: 0
+tau: 0.01
+log_std_min: -10
+log_std_max: 2
 
-# Planning
 mpc: true
 horizon: 5
 num_samples: 512
@@ -65,14 +83,14 @@ discount_denom: 5
 discount_min: 0.95
 discount_max: 0.995
 
-# Distillation
 checkpoint: /root/td-mpc-opt/tdmpc2/models/multitask/mt30-317M.pt
 multitask: false
 task_dim: 96
 
-# Infrastructure
 device: cuda
 save_csv: true
+save_agent: true
+save_video_local: false
 wandb: false
 wandb_project: none
 wandb_entity: none

@@ -1,8 +1,5 @@
-import numpy as np
 import torch
 import torch.nn.functional as F
-from common import math
-from common.scale import RunningScale
 from common.world_model import WorldModel
 
 class TDMPC2:
@@ -20,9 +17,7 @@ class TDMPC2:
             {'params': self.model._task_emb.parameters() if self.cfg.multitask else []}
         ], lr=self.cfg.lr)
         self.pi_optim = torch.optim.Adam(self.model._pi.parameters(), lr=self.cfg.lr, eps=1e-5)
-        
         self.model.eval()
-        self.scale = RunningScale(cfg)
 
     def load(self, fp, strict=False):
         state_dict = torch.load(fp, weights_only=False)
@@ -42,33 +37,40 @@ class TDMPC2:
             
             teacher_reward = None
             if self.teacher is not None:
-                # TD-MPC-OPT: Reward Distillation [cite: 111]
+                # TD-MPC-OPT: Reward Distillation
+                # Slice ManiSkill3 data to match Teacher's MT30 expectations
                 t_obs = obs[0][:, :24] 
                 t_action = action[0][:, :6]
-                t_task = torch.zeros_like(task) 
+                
+                # FIX: Provide a default task tensor if the environment is single-task
+                if task is None:
+                    t_task = torch.zeros(t_obs.shape[0], dtype=torch.long, device=self.device)
+                else:
+                    t_task = torch.zeros_like(task)
+                    
                 teacher_z = self.teacher.model.encode(t_obs, t_task)
-                # Compute MSE between teacher and student rewards [cite: 112, 113]
                 teacher_reward = self.teacher.model.reward(teacher_z, t_action, t_task)
 
         self.optim.zero_grad(set_to_none=True)
         self.model.train()
 
-        # Consistency loss
+        # Consistency rollout
         z = self.model.encode(obs[0], task)
         consistency_loss = 0
         for t in range(self.cfg.horizon):
             z = self.model.next(z, action[t], task)
             consistency_loss += F.mse_loss(z, next_z[t]) * self.cfg.rho**t
 
-        # Distillation loss component [cite: 116]
+        # Distillation loss: MSE between teacher and student rewards
         distill_loss = torch.tensor(0.0, device=self.device)
         if teacher_reward is not None:
             student_reward = self.model.reward(self.model.encode(obs[0], task), action[0], task)
             distill_loss = F.mse_loss(student_reward, teacher_reward)
 
-        # Total combined loss with d_coef [cite: 116]
+        # Total combined loss
         d_coef = getattr(self.cfg, 'distill_coef', 0.4)
-        total_loss = self.cfg.consistency_coef * (consistency_loss / self.cfg.horizon) + d_coef * distill_loss
+        total_loss = (self.cfg.consistency_coef * (consistency_loss / self.cfg.horizon) + 
+                      d_coef * distill_loss)
 
         total_loss.backward()
         self.optim.step()
