@@ -76,3 +76,10 @@ class TDMPC2:
         self.optim.step()
         self.model.eval()
         return {"total_loss": total_loss.item(), "distill_loss": distill_loss.item()}
+
+    def load(self, fp, strict=False):
+        state_dict = torch.load(fp, weights_only=False)
+        return self.model.load_state_dict(state_dict["model"], strict=strict)
+
+    def save(self, fp):
+        torch.save({"model": self.model.state_dict()}, fp)
