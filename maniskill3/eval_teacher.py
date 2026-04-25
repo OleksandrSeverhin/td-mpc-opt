@@ -46,7 +46,8 @@ def evaluate(cfg: dict):
     ep_rewards = []
     ep_successes = []
 
-    for ep in range(1996):
+    episodes = 100000
+    for ep in range(episodes):
         # Handle Gym/ManiSkill3 return formats
         reset_out = env.reset()
         obs = reset_out[0] if isinstance(reset_out, tuple) else reset_out
