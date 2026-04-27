@@ -7,7 +7,7 @@ render_size: 64
 obs: state
 modality: state
 action_dim: 8
-num_envs: 4
+num_envs: 128 #4
 num_eval_envs: 1
 eval_episodes_per_env: 10
 eval_reconfiguration_frequency: 1
@@ -39,7 +39,7 @@ exp_name: ms3_distill_1M
 render: false
 
 buffer_size: 1000000
-batch_size: 256
+batch_size: 512 #256
 steps_per_update: 1
 lr: 0.0003
 enc_lr_scale: 0.1

@@ -28,7 +28,8 @@ class TDMPC2:
         obs = obs.to(self.device, non_blocking=True)
         z = self.model.encode(obs, task) 
         a = self.model.pi(z, task)[int(not eval_mode)] 
-        return a.cpu()
+        #return a.cpu()
+        return a
 
     def update(self, buffer):
         obs, action, reward, task = buffer.sample()
