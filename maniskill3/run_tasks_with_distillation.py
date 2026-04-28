@@ -1,6 +1,7 @@
 import os
 import subprocess
 import time
+import argparse
 from datetime import datetime
 
 # 1. Define your chosen ManiSkill3 tasks
@@ -9,72 +10,81 @@ TASKS = [
     "PickCube-v1",
     "StackCube-v1",
     "PegInsertionSide-v1",
-    "PushT-v1",
     "PlugCharger-v1",
     "TurnFaucet-v1",
-    "OpenCabinetDrawer-v1"
+    "OpenCabinetDrawer-v1",
+    "PushT-v1"
 ]
 
-# 2. Define checkpoints and directories
-TEACHER_CKPT = "/root/td-mpc-opt/tdmpc2/models/multitask/mt30-317M.pt"
-RESULTS_DIR = "results"
-
-# Create the results folder if it doesn't exist
-os.makedirs(RESULTS_DIR, exist_ok=True)
-
 def main():
-    print(f"[{datetime.now().strftime('%H:%M:%S')}] Starting Batch Distillation Pipeline...")
-    print(f"Logs will be saved to the '{RESULTS_DIR}/' directory.\n")
+    # Set up argument parsing so you can choose the schedule from the terminal
+    parser = argparse.ArgumentParser(description="Automate Student Evaluation across tasks.")
+    parser.add_argument(
+        '--schedule', 
+        type=str, 
+        required=True, 
+        choices=['constant', 'linear', 'cosine'],
+        help="The distillation coefficient schedule used during training."
+    )
+    args = parser.parse_args()
+    
+    schedule = args.schedule
+    
+    # 2. Set up the dynamic results directory
+    results_dir = f"results_for_student_{schedule}"
+    os.makedirs(results_dir, exist_ok=True)
+
+    print(f"[{datetime.now().strftime('%H:%M:%S')}] Starting Student Evaluation Pipeline...")
+    print(f"Testing models trained with '{schedule}' decay.")
+    print(f"Logs will be saved to: {results_dir}/\n")
 
     for task in TASKS:
         print("="*60)
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] Launching: {task}")
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] Evaluating Student on: {task}")
         print("="*60)
         
-        # Define the exact command and arguments
+        # 3. Define the exact checkpoint path based on the schedule and task
+        # Note: Adjust this path if your Hydra logs are named differently!
+        checkpoint_path = f"/root/td-mpc-opt/maniskill3/logs/ms3_ablation_{schedule}_{task}/model.pt"
+        
+        # Define the exact command using the eval_student.py script
         cmd = [
-            "python", "train_distill.py",
+            "python", "eval_student.py",
             f"env_id={task}",
-            "model_size=1",
-            f"checkpoint={TEACHER_CKPT}",
-            f"exp_name=ms3_distill_1M_{task}",
-            "steps=1000000"
+            f"checkpoint={checkpoint_path}",
+            "render=false"
         ]
         
-        # Define the output file path for this specific task
-        log_file_path = os.path.join(RESULTS_DIR, f"{task}_output.txt")
+        # Save output to a distinct file in the dynamically created folder
+        log_file_path = os.path.join(results_dir, f"{task}_eval_output.txt")
         
-        # Open the file and start the process
         with open(log_file_path, "w") as log_file:
-            # We use Popen to capture the output in real-time
             process = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT, # Redirect errors to the same output stream
+                stderr=subprocess.STDOUT, 
                 text=True,
-                bufsize=1 # Line buffered
+                bufsize=1 
             )
             
-            # Read the output line-by-line as the training script runs
             for line in process.stdout:
-                print(line, end="")  # Print to your terminal screen
-                log_file.write(line) # Save to the text file
-                log_file.flush()     # Force write to disk immediately (safe against crashes)
+                print(line, end="") 
+                log_file.write(line)
+                log_file.flush()    
             
-            # Wait for the process to officially finish
             process.wait()
             
             if process.returncode != 0:
                 print(f"\n[{datetime.now().strftime('%H:%M:%S')}] WARNING: {task} stopped with error code {process.returncode}")
             else:
-                print(f"\n[{datetime.now().strftime('%H:%M:%S')}] Successfully finished {task}")
+                print(f"\n[{datetime.now().strftime('%H:%M:%S')}] Successfully finished evaluating {task}")
         
-        # Sleep for 10 seconds to allow PyTorch to fully release GPU VRAM
-        print("Flushing GPU Memory. Waiting 10 seconds...\n")
-        time.sleep(10)
+        # Give the GPU a moment to clear VRAM before loading the next environment
+        time.sleep(5)
 
     print("========================================================")
-    print("ALL TASKS COMPLETED. Check the 'results/' folder for logs.")
+    print(f"ALL EVALUATIONS COMPLETED FOR {schedule.upper()} DECAY.")
+    print(f"Check the '{results_dir}/' folder for scores.")
     print("========================================================")
 
 if __name__ == "__main__":

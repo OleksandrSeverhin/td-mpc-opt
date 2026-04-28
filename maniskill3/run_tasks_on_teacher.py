@@ -4,14 +4,14 @@ import time
 from datetime import datetime
 
 # 1. Define your chosen ManiSkill3 tasks
-    #"PushCube-v1",
-    #"PickCube-v1",
-    #"StackCube-v1",
-    #"PegInsertionSide-v1",
-    #"PlugCharger-v1", # always 0.0 results
-    #"TurnFaucet-v1",
-    #"OpenCabinetDrawer-v1", # calculate end results
 TASKS = [
+    "PushCube-v1",
+    "PickCube-v1",
+    "StackCube-v1",
+    "PegInsertionSide-v1",
+    "PlugCharger-v1",
+    "TurnFaucet-v1",
+    "OpenCabinetDrawer-v1",
     "PushT-v1"
 ]
 

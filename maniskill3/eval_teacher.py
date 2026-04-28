@@ -46,7 +46,7 @@ def evaluate(cfg: dict):
     ep_rewards = []
     ep_successes = []
 
-    episodes = 12500
+    episodes = 5000
     for ep in range(episodes):
         # Handle Gym/ManiSkill3 return formats
         reset_out = env.reset()
