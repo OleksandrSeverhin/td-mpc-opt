@@ -6,10 +6,10 @@ from datetime import datetime
 # The 5 mathematically sound datasets
 TASKS = [
     "PushCube-v1",
-    "PickCube-v1",
-    "StackCube-v1",
-    "PegInsertionSide-v1",
-    "PlugCharger-v1"
+    #"PickCube-v1",
+    #"StackCube-v1",
+    #"PegInsertionSide-v1",
+    #"PlugCharger-v1"
 ]
 
 # The 3 decay schedules
@@ -25,7 +25,7 @@ def main():
     for task in TASKS:
         for schedule in SCHEDULES:
             dataset_path = os.path.join(DATA_BASE_DIR, task)
-            exp_name = f"offline_{schedule}_{task}"
+            exp_name = f"offline_{schedule}_{task}_1M"
             
             print("-" * 60)
             print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Training: {task} | Schedule: {schedule}")
