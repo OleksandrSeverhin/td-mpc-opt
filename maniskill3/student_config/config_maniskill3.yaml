@@ -7,7 +7,7 @@ eval_episodes: 10
 eval_freq: 50000
 
 # training
-steps: 25_000 # 50_000. 100_000, 200_000, 337_000, 1_000_000
+steps: 25_000 # 50_000. 100_000, 200_000, 1_000_000
 batch_size: 256
 reward_coef: 0.1
 value_coef: 0.1
@@ -15,7 +15,7 @@ consistency_coef: 20
 rho: 0.5
 lr: 3e-4
 enc_lr_scale: 0.3
-grad_clip_norm: 20 # 20
+grad_clip_norm: 20
 tau: 0.01
 discount_denom: 5
 discount_min: 0.95
@@ -25,9 +25,6 @@ exp_name: name
 data_dir: root/td-mpc-opt/data/maniskill3/
 
 # distillation
-#distillation:
-#  schedule: "constant" 
-#  d_coef: 0.4 
 d_coef: 0.4
 
 # planning

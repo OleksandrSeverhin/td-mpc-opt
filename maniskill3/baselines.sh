@@ -1,15 +1,10 @@
-# Baseline results for TD-MPC2 (We recommend running individual experiments, instead of the entire file)
-
 seed=(9351 4796 1788)
-# Wandb settings 
 use_wandb=false
 wandb_entity="na"
 wandb_project="na"
 wandb_group="na"
 
 ### State Based TD-MPC2 Baselines ###
-
-## walltime_efficient Setting ##
 
 # PushCube-v1 #
 for seed in ${seed[@]}
@@ -74,8 +69,6 @@ do
         wandb=$use_wandb wandb_entity=$wandb_entity wandb_project=$wandb_project wandb_group=$wandb_group setting_tag=walltime_efficient \
         wandb_name=tdmpc2-UnitreeG1TransportBox-v1-state-$seed-walltime_efficient
 done
-
-## sample_efficient Setting ##
 
 # PushCube-v1 #
 for seed in ${seed[@]}
