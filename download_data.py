@@ -1,33 +1,44 @@
+from pathlib import Path
+
 from huggingface_hub import hf_hub_download
-import os
 
-# Target folder for dataset chunks
-target_dir = "data/"
-os.makedirs(target_dir, exist_ok=True)
+REPO_ID = "nicklashansen/tdmpc2"
+DATA_DIR = Path("data/")
+MODEL_DIR = Path("tdmpc2/models/")
 
-# Chunk filenames: chunk_0.pt to chunk_3.pt
-for i in range(4):  # 0 to 3 inclusive
-    filename = f"mt30/chunk_{i}.pt"
-    
+
+def download_dataset_chunks(num_chunks: int = 4):
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+    for i in range(num_chunks):
+        filename = f"mt30/chunk_{i}.pt"
+        local_path = hf_hub_download(
+            repo_id=REPO_ID,
+            repo_type="dataset",
+            filename=filename,
+            local_dir=str(DATA_DIR),
+            local_dir_use_symlinks=False
+        )
+        print(f"Downloaded {filename} to {local_path}")
+
+
+def download_model(filename: str):
+    MODEL_DIR.mkdir(parents=True, exist_ok=True)
+
     local_path = hf_hub_download(
-        repo_id="nicklashansen/tdmpc2",
-        repo_type="dataset",
+        repo_id=REPO_ID,
+        repo_type="model",
         filename=filename,
-        local_dir=target_dir,
+        local_dir=str(MODEL_DIR),
         local_dir_use_symlinks=False
     )
-    print(f"Downloaded {filename} to {local_path}")
+    print(f"Model downloaded to {local_path}")
 
-# Download the model to tdmpc2/models
-model_dir = "tdmpc2/models"
-os.makedirs(model_dir, exist_ok=True)
 
-model_path = hf_hub_download(
-    repo_id="nicklashansen/tdmpc2",
-    repo_type="model",
-    filename="multitask/mt30-317M.pt",
-    local_dir=model_dir,
-    local_dir_use_symlinks=False
-)
+def main():
+    download_dataset_chunks(num_chunks=4)
+    download_model("multitask/mt30-317M.pt")
 
-print(f"Model downloaded to {model_path}")
+
+if __name__ == "__main__":
+    main()
