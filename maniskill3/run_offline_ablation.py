@@ -5,10 +5,10 @@ from datetime import datetime
 
 TASKS = [
     "PushCube-v1",
-    "PickCube-v1",
-    "StackCube-v1",
-    "PegInsertionSide-v1",
-    "PlugCharger-v1"
+    #"PickCube-v1",
+    #"StackCube-v1",
+    #"PegInsertionSide-v1",
+    #"PlugCharger-v1"
 ]
 
 SCHEDULES = ["constant", "linear", "cosine"]
