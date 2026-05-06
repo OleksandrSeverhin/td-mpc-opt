@@ -108,6 +108,8 @@ class TDMPC2:
 
     @torch.no_grad()
     def plan(self, z, t0=False, eval_mode=False, task=None):
+        z = z.view(-1, z.shape[-1])
+        
         if self.cfg.num_pi_trajs > 0:
             pi_actions = torch.empty(
                 self.cfg.horizon,

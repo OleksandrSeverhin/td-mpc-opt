@@ -28,7 +28,9 @@ def main():
         "python", "train.py",
         f"env_id={TASK}",
         f"exp_name={exp_name}",
-        f"steps={STEPS}"
+        f"steps={STEPS}",
+        "+save_video=false",
+        "mpc=false"
     ]
 
     try:
