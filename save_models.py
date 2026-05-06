@@ -8,6 +8,7 @@ FOLDER_PATH = (
 )
 REPO_ID = "oleksandr-severhin/td-mpc-opt"
 
+#FOLDER_PATH = "maniskill3/logs/PushCube-v1/1/online_control_PushCube-v1_1M/models/"
 
 def main() -> None:
     token = os.getenv("HF_TOKEN")
