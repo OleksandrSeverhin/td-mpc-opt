@@ -87,9 +87,21 @@ class WorldModel(nn.Module):
         task_emb = self._get_expanded_task(z, task)
 
         if getattr(self.cfg, 'is_moe_student', False):
-            pi_out, _ = self._pi(z, task_emb)
+            # Save original shape to restore later (handles 1D rollout or 3D sequence)
+            orig_shape = z.shape[:-1]
+            
+            # Flatten to strictly 2D to satisfy MoE einsum/bmm operations
+            z_flat = z.view(-1, z.shape[-1])
+            task_emb_flat = task_emb.view(-1, task_emb.shape[-1])
+
+            # Forward pass through the MoE
+            pi_out_flat, _ = self._pi(z_flat, task_emb_flat)
+
+            # Unflatten back to the original dimensions
+            pi_out = pi_out_flat.view(*orig_shape, -1)
             return pi_out.chunk(2, dim=-1)
 
+        # Standard teacher forward pass
         x = torch.cat([z, task_emb], dim=-1)
         return self._pi(x).chunk(2, dim=-1)
 
