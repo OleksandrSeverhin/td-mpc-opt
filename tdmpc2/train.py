@@ -142,7 +142,7 @@ def train(cfg: DictConfig):
                 metrics = trainer.update(buffer)
                 if step % 1000 == 0:
                     print(f"Step {step} | Total Loss: {metrics['total_loss']:.4f}")
-                    logger.log(metrics, step=step)
+                    logger.log(metrics)
             except Exception as e:
                 print(colored(f"Training failed at step {step}: {e}", 'red'))
                 break

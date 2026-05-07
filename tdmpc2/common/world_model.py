@@ -1,9 +1,7 @@
 import torch
 import torch.nn as nn
-import math
-
+from omegaconf import OmegaConf
 from common import layers
-
 
 class WorldModel(nn.Module):
     def __init__(self, cfg):
@@ -11,26 +9,39 @@ class WorldModel(nn.Module):
         self.cfg = cfg
         self.device = torch.device('cuda')
 
+        if getattr(cfg, 'is_moe_student', False):
+            try:
+                OmegaConf.set_struct(self.cfg, False)
+            except Exception:
+                pass
+            self.cfg.latent_dim = 1376
+            self.cfg.mlp_dim = 4096
+            self.cfg.task_dim = 96
+
         self.task_dim = getattr(cfg, 'task_dim', 96)
+        
+        in_dim = cfg.latent_dim + self.task_dim + cfg.action_dim
         mlp_dims = [4096, 4096]
 
         self._encoder = layers.enc(cfg)
-        self._task_emb = nn.Embedding(len(cfg.tasks), self.task_dim)
-
-        in_dim = cfg.latent_dim + self.task_dim + cfg.action_dim
-
+        
         self._dynamics = layers.mlp(in_dim, mlp_dims, cfg.latent_dim)
         self._reward = layers.mlp(in_dim, mlp_dims, cfg.num_bins)
-
         self._Qs = nn.ModuleList([
             layers.mlp(in_dim, mlp_dims, cfg.num_bins)
             for _ in range(cfg.num_q)
         ])
+        
+        self._task_emb = nn.Embedding(len(cfg.tasks), self.task_dim)
 
         if getattr(cfg, 'is_moe_student', False):
             from common.moe import MoEPolicy
-            num_experts = getattr(cfg, 'num_experts', 4)
-            self._pi = MoEPolicy(cfg.latent_dim + self.task_dim, num_experts, 2 * cfg.action_dim)
+            self._pi = MoEPolicy(
+                latent_dim=cfg.latent_dim + self.task_dim,
+                task_dim=self.task_dim,
+                action_dim=cfg.action_dim,
+                num_experts=getattr(cfg, 'num_experts', 4)
+            )
         else:
             self._pi = layers.mlp(cfg.latent_dim + self.task_dim, mlp_dims, 2 * cfg.action_dim)
 
@@ -60,7 +71,8 @@ class WorldModel(nn.Module):
 
     def task_emb(self, obs, task):
         if isinstance(obs, dict):
-            obs = obs[self.cfg.obs]
+            obs_key = getattr(self.cfg, 'obs', 'state')
+            obs = obs[obs_key]
         task_emb = self._task_emb(task.long())
         if obs.ndim > task_emb.ndim:
             task_emb = task_emb.unsqueeze(0).expand(*obs.shape[:-1], -1)
@@ -85,35 +97,23 @@ class WorldModel(nn.Module):
 
     def pi(self, z, task):
         task_emb = self._get_expanded_task(z, task)
-
+        
         if getattr(self.cfg, 'is_moe_student', False):
-            # Save original shape to restore later (handles 1D rollout or 3D sequence)
-            orig_shape = z.shape[:-1]
-            
-            # Flatten to strictly 2D to satisfy MoE einsum/bmm operations
-            z_flat = z.view(-1, z.shape[-1])
-            task_emb_flat = task_emb.view(-1, task_emb.shape[-1])
-
-            # Forward pass through the MoE
-            pi_out_flat, _ = self._pi(z_flat, task_emb_flat)
-
-            # Unflatten back to the original dimensions
-            pi_out = pi_out_flat.view(*orig_shape, -1)
+            pi_out, _ = self._pi(z, task_emb)
             return pi_out.chunk(2, dim=-1)
-
-        # Standard teacher forward pass
+            
         x = torch.cat([z, task_emb], dim=-1)
         return self._pi(x).chunk(2, dim=-1)
 
     def Q(self, z, action, task, return_all=False):
         mask = self._action_masks[task.long()]
         action = action * mask
-
+        
         task_emb = self._get_expanded_task(z, task)
         x = torch.cat([z, task_emb, action], dim=-1)
-
+        
         qs = torch.stack([q_net(x) for q_net in self._Qs], dim=0)
-
+        
         if return_all:
             return qs
         return torch.min(qs, dim=0)[0]

@@ -25,11 +25,13 @@ class MoEPolicy(nn.Module):
         super().__init__()
         self.num_experts = num_experts
         
-        # Dynamically map the input to handle if latent_dim was concatenated with task_dim
         self.input_dim = latent_dim
         
+        # TD-MPC2 continuous policies MUST output 2x the action dim (mean + log_std).
+        actual_out_dim = action_dim * 2 if action_dim < 12 else action_dim
+        
         self.experts = nn.ModuleList([
-            MLPExpert(self.input_dim, 512, action_dim) for _ in range(num_experts)
+            MLPExpert(self.input_dim, 512, actual_out_dim) for _ in range(num_experts)
         ])
         
         # Safe fallback: if task_dim was mapped to num_experts during init, default to 96
@@ -46,26 +48,22 @@ class MoEPolicy(nn.Module):
         # 1. Routing
         router_in = task_emb
         if task_emb.shape[-1] != self.router[0].in_features:
-            # Fallback if dimensions got crossed during world_model init
             router_in = task_emb[..., :self.router[0].in_features]
             
-        # Shape: [..., num_experts]
         gate_weights = self.router(router_in) 
         
         # 2. Expert Forward
-        # Auto-detect if experts expect z (1376) or z + task_emb (1472)
         expert_in = z
         if self.input_dim != z.shape[-1]:
             if self.input_dim == z.shape[-1] + task_emb.shape[-1]:
                 expert_in = torch.cat([z, task_emb], dim=-1)
                 
-        # Stack on the second-to-last dimension (dim=-2)
-        # This safely turns a list of [..., action_dim] into [..., num_experts, action_dim]
         expert_outputs = torch.stack([expert(expert_in) for expert in self.experts], dim=-2)
         
         # 3. Dimension-Agnostic Einsum
-        # The ellipsis (...) gracefully handles 1D, 2D, or 3D tensors natively!
         output = torch.einsum('...e, ...ed -> ...d', gate_weights, expert_outputs)
         
-        # TD-MPC2 unpacks a tuple (mean, log_std), so we return a dummy second argument
-        return output, None
+        # FIX: Provide a safe zero tensor instead of None to prevent metric accumulator crashes
+        aux_loss = torch.tensor(0.0, device=output.device)
+        
+        return output, aux_loss

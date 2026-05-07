@@ -5,7 +5,7 @@ task: mt30
 seed: 1
 exp_name: "moe_distill"
 steps: 10000000
-model_size: 5 
+model_size: 5
 
 obs: state
 obs_shape:
@@ -46,3 +46,6 @@ distillation:
   d_coef: 0.4
 
 latent_distill_alpha: 0.5
+
+latent_dim: 1376
+mlp_dim: 4096
