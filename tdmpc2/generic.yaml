@@ -3,4 +3,4 @@ defaults:
   - student_config: config_mt30 # mt30
   - teacher_config: config_multi_distill_317M 
   - _self_
-  - override hydra/launcher: submitit_local 
+#  - override hydra/launcher: submitit_local 

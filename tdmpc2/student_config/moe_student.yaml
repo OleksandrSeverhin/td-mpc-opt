@@ -1,0 +1,48 @@
+defaults:
+  - /generic
+
+task: mt30
+seed: 1
+exp_name: "moe_distill"
+steps: 10000000
+model_size: 5 
+
+obs: state
+obs_shape:
+  state: [24]
+action_dim: 6
+action_dims: [6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6]
+episode_lengths: [500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500]
+
+vmin: -10
+vmax: 10
+num_bins: 101
+
+buffer_size: 1000000
+batch_size: 256
+horizon: 5
+simnorm_dim: 8
+num_q: 5
+dropout: 0.01
+log_std_min: -10
+log_std_max: 2
+lr: 3e-4
+enc_lr_scale: 0.3
+iterations: 6
+discount_denom: 500
+discount_min: 0.95
+discount_max: 0.995
+save_csv: true
+save_agent: true
+disable_wandb: true
+wandb_project: none
+wandb_entity: none
+mpc: false
+
+is_moe_student: true
+
+distillation:
+  schedule: constant
+  d_coef: 0.4
+
+latent_distill_alpha: 0.5

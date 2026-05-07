@@ -3,7 +3,7 @@ task: mt30
 obs: state
 
 # evaluation
-checkpoint: /root/td-mpc-opt/tdmpc2/models/mt30-317M.pt
+checkpoint: /root/td-mpc-opt/tdmpc2/models/multitask/mt30-317M.pt
 eval_episodes: 10
 eval_freq: 50000
 
@@ -74,11 +74,12 @@ work_dir: ???
 task_title: ???
 multitask: ???
 tasks: ???  
-obs_shape: ???
-action_dim: ???
+obs_shape:
+  state: [24]
+action_dim: 6
 episode_length: ???
 obs_shapes: ???
-action_dims: ???
-episode_lengths: ???
+action_dims: [6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6]
+episode_lengths: [500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500]
 seed_steps: ???
 bin_size: ???
