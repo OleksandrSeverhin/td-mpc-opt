@@ -77,7 +77,14 @@ def train(cfg: DictConfig):
 
     # 2. Load MoE Student
     cfg_student = parse_cfg(cfg.student_config)
+    
+    # Unlock the config so we can manually inject missing variables
+    OmegaConf.set_struct(cfg_student, False) 
+    
     cfg_student.is_moe_student = True 
+    cfg_student.save_agent = True  # Failsafe so logger.py doesn't crash
+    cfg_student.save_video = False # Failsafe for video logging (often crashes next)
+    
     set_seed(cfg_student.seed)
     
     env_student = make_env(cfg_student)
